@@ -19,3 +19,8 @@ skills:
         - EMAIL_IMAP_PORT
         - EMAIL_IMAP_USER
         - EMAIL_IMAP_PASSWORD
+  - id: persona-customer-support
+    name: Customer Support Persona
+    source: hazelugo/fav_gits
+    description: Manage customer support conversations — track tickets, respond, escalate, and maintain a support persona.
+    version: 0.1.0
