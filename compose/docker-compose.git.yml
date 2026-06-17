@@ -3,8 +3,8 @@ services:
     image: gitea/gitea:latest
     container_name: helpdesk-gitea
     ports:
-      - "127.0.0.1:3000:3000"
-      - "127.0.0.1:222:22"
+      - "127.0.0.1:3002:3000"
+      - "127.0.0.1:2222:22"
     volumes:
       - ./data/gitea:/data
       - ./data/gitea/ssh:/home/git/.ssh
