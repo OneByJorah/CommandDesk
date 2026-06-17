@@ -1,0 +1,20 @@
+services:
+  hermes:
+    build:
+      context: ..
+      dockerfile: compose/Dockerfile
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      OSTICKET_BASE_URL: ${OSTICKET_BASE_URL:-https://helpdesk.example.com}
+      OSTICKET_API_KEY: ${OSTICKET_API_KEY:-}
+      OSTICKET_DEFAULT_DEPT_ID: ${OSTICKET_DEFAULT_DEPT_ID:-1}
+      OSTICKET_DEFAULT_PRIORITY: ${OSTICKET_DEFAULT_PRIORITY:-low}
+      ZAMMAD_BASE_URL: ${ZAMMAD_BASE_URL:-}
+      ZAMMAD_API_TOKEN: ${ZAMMAD_API_TOKEN:-}
+      EMAIL_IMAP_HOST: ${EMAIL_IMAP_HOST:-}
+      EMAIL_IMAP_PORT: ${EMAIL_IMAP_PORT:-993}
+      EMAIL_IMAP_USER: ${EMAIL_IMAP_USER:-}
+      EMAIL_IMAP_PASSWORD: ${EMAIL_IMAP_PASSWORD:-}
+      EMAIL_TICKET_PLATFORM: ${EMAIL_TICKET_PLATFORM:-osticket}
+    restart: unless-stopped

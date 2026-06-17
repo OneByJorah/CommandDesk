@@ -1,0 +1,21 @@
+skills:
+  - id: j1-helpdesk
+    name: J1 Helpdesk Agent
+    description: Self-hosted AI helpdesk with multi-platform ticketing, email-to-ticket, and a cost-tracking admin dashboard.
+    version: 0.1.0
+    entrypoints:
+      - tool: ticket_platforms.registry.get
+        description: Resolve a ticket platform adapter by name.
+      - tool: ticket_platforms.email.EmailTicketAdapter.sync_unread
+        description: Sync unread IMAP mail into tickets.
+    config:
+      required:
+        - OSTICKET_BASE_URL
+        - OSTICKET_API_KEY
+      optional:
+        - ZAMMAD_BASE_URL
+        - ZAMMAD_API_TOKEN
+        - EMAIL_IMAP_HOST
+        - EMAIL_IMAP_PORT
+        - EMAIL_IMAP_USER
+        - EMAIL_IMAP_PASSWORD
