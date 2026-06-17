@@ -24,8 +24,6 @@
   h2 { color: var(--cyan); font-size: 1.4rem; margin-top: 28px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
   h3 { color: var(--yellow); font-size: 1.1rem; margin-top: 20px; }
   .lead { color: #9aa3ad; font-size: 1.05rem; margin-bottom: 22px; }
-
-  /* Diagram */
   .diagram-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin: 22px 0; overflow-x: auto; }
   .layer { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .layer-label { width: 100%; text-align: center; color: var(--cyan-dim); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; margin: 6px 0 2px; }
@@ -39,8 +37,6 @@
   .node.channel strong { color: var(--cyan); }
   .node .note { font-size: 0.75rem; color: #8b95a0; margin-top: 6px; }
   .arrow { width: 2px; height: 14px; background: #2a2f3a; margin: 0 auto; }
-
-  /* Panels */
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin: 14px 0; }
   .panel .meta { color: var(--cyan-dim); font-size: 0.8rem; margin-top: 6px; }
   code { background: #0b0c10; padding: 2px 6px; border-radius: 4px; color: var(--yellow); font-size: 0.9em; }
@@ -54,9 +50,6 @@
   .nav { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
   .nav a { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; }
   .nav a:hover { border-color: var(--cyan); }
-  .collapse { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin: 10px 0; background: var(--panel); cursor: pointer; }
-  .collapse + .hidden { display: none; }
-  .hidden.open { display: block; }
   .callout { border-left: 3px solid var(--yellow); padding: 10px 14px; background: #14202b; border-radius: 0 8px 8px 0; margin: 12px 0; }
   .kbd { background: #0b0c10; border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Ubuntu Mono, monospace; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0; }
@@ -75,9 +68,10 @@
     <a href="#hero-vm">VM Setup</a>
     <a href="#hero-arch">Architecture Diagram</a>
     <a href="#hero-stack">Stack</a>
-    <a href="#hero-osticket">osTicket</a>
+    <a href="#hero-ticket-platforms">Ticket Platforms</a>
     <a href="#hero-memory">Memory</a>
     <a href="#hero-model">Model</a>
+    <a href="#hero-admin">Admin Dashboard</a>
     <a href="#hero-security">Security</a>
     <a href="#hero-ops">Operations</a>
     <a href="#hero-checklist">Checklist</a>
@@ -120,6 +114,7 @@
       <div class="node channel"><strong>Telegram</strong><div class="note">BotFather bot / webhook</div></div>
       <div class="node channel"><strong>WhatsApp</strong><div class="note">baileys / whatsapp-web.js session</div></div>
       <div class="node channel"><strong>iMessage</strong><div class="note">macOS relay recommended</div></div>
+      <div class="node channel"><strong>Email</strong><div class="note">IMAP poller → ticket</div></div>
     </div>
     <div class="arrow"></div>
 
@@ -133,7 +128,7 @@
     <div class="layer">
       <div class="node service"><strong>SearXNG</strong><div class="note">Self-hosted web search</div></div>
       <div class="node service"><strong>KB / Wiki</strong><div class="note">Markdown docs, how-tos</div></div>
-      <div class="node service"><strong>Ticketing</strong><div class="note">SQLite-native or Zammad/osTicket API</div></div>
+      <div class="node service"><strong>Ticketing</strong><div class="note">osTicket / Zammad / email via registry</div></div>
       <div class="node service"><strong>Memory</strong><div class="note">Conversation + ticket state</div></div>
     </div>
     <div class="arrow"></div>
@@ -152,32 +147,39 @@
     <table>
       <tr><th>Area</th><th>Recommended default</th><th>Alternative</th></tr>
       <tr><td>Messaging</td><td>Telegram first</td><td>Whatsapp via baileys (higher ops risk)</td></tr>
-      <tr><td>Ticketing</td><td>Hermes-native SQLite “ticket tool”</td><td>Zammad or osTicket via API</td></tr>
+      <tr><td>Ticketing</td><td>Adapter registry: osTicket, Zammad, email</td><td>Add new backends without changing Hermes core</td></tr>
       <tr><td>Search</td><td>SearXNG</td><td>Single DuckDuckGo scraper (weaker)</td></tr>
       <tr><td>KB</td><td>Local markdown + ripgrep/Whoosh</td><td>Static web wiki</td></tr>
-      <tr><td>Model runtime</td><td>Remote API or small quantized model</td><td>Local LLM (heavy CPU)</td></tr>
+      <tr><td>Model runtime</td><td>llama.cpp local 64k</td><td>Remote API or small quantized model</td></tr>
+      <tr><td>Admin</td><td>Self-hosted dashboard</td><td>External logging SaaS</td></tr>
       <tr><td>Auth/Rate limit</td><td>Allowlist + per-user rate limiting</td><td>OTP / invite codes</td></tr>
     </table>
   </div>
 
-  <div id="hero-osticket" class="panel">
-    <strong style="color:var(--cyan);">osTicket Integration</strong>
-    <div class="meta">Wire osTicket into Hermes via its REST API.</div>
-    <pre><code># Hermes config
-tools:
-  osticket:
-    base_url: "https://helpdesk.your-domain.com"
-    api_key: "YOUR_OSTICKET_API_KEY"
-    default_dept_id: 1
-    default_priority: "low"
-    rate_limit_per_min: 5</code></pre>
-    <h3>Tool calls</h3>
-    <ul>
-      <li><code>create_ticket(user, issue, priority, channel)</code></li>
-      <li><code>update_ticket(ticket_id, status, note)</code></li>
-      <li><code>search_tickets(query)</code></li>
-      <li><code>close_ticket(ticket_id)</code></li>
-    </ul>
+  <div id="hero-ticket-platforms" class="panel">
+    <strong style="color:var(--cyan);">Multi-Platform Ticketing</strong>
+    <div class="meta">Hermes talks to a registry of ticket adapters. Add a platform once; swap it everywhere by config.</div>
+    <table>
+      <tr><th>Platform</th><th>Type</th><th>Status</th><th>Notes</th></tr>
+      <tr><td>osTicket</td><td>Ticketing</td><td>Implemented</td><td>REST API wrapper in <code>ticket_platforms/osticket.py</code></td></tr>
+      <tr><td>Zammad</td><td>Ticketing</td><td>Implemented</td><td>REST API v1 wrapper in <code>ticket_platforms/zammad.py</code></td></tr>
+      <tr><td>Email → Ticket</td><td>Ingestion</td><td>Implemented</td><td>IMAP poller bridge in <code>ticket_platforms/email.py</code></td></tr>
+    </table>
+    <h3>Registry usage</h3>
+    <pre><code>from ticket_platforms.registry import get
+
+Platform = get("osticket")
+platform = Platform(base_url="...", api_key="...")
+platform.create_ticket(user_id="u1", subject="VPN", body="I can't log in.")</code></pre>
+    <h3>Env-based config</h3>
+    <pre><code>OSTICKET_BASE_URL=https://helpdesk.example.com
+OSTICKET_API_KEY=...
+ZAMMAD_BASE_URL=https://zammad.example.com
+ZAMMAD_API_TOKEN=...
+EMAIL_IMAP_HOST=imap.example.com
+EMAIL_IMAP_USER=helpdesk@example.com
+EMAIL_IMAP_PASSWORD=...
+EMAIL_TICKET_PLATFORM=osticket</code></pre>
     <h3>PII rules</h3>
     <ul>
       <li>Never auto-attach full Telegram metadata. Keep your own mapping if needed.</li>
@@ -254,6 +256,42 @@ WantedBy=multi-user.target</code></pre>
     <div class="meta">Tip: start with 64k set in config, then lower it only if you hit startup OOM. Check with <code class="kbd">journalctl -u llama-cpp-server -f</code>.</div>
   </div>
 
+  <div id="hero-admin" class="panel">
+    <strong style="color:var(--cyan);">Admin Dashboard — Live Cost Tracker</strong>
+    <div class="meta">Shows what this stack would cost if replaced by hosted SaaS equivalents. Open <code>admin/admin-dashboard.html</code>.</div>
+    <h3>What admin sees</h3>
+    <table>
+      <tr><th>Widget</th><th>Data</th></tr>
+      <tr><td>Tickets</td><td>Open / closed counts</td></tr>
+      <tr><td>Sessions</td><td>Unique users / conversations</td></tr>
+      <tr><td>Avg response</td><td>End-to-end bot latency</td></tr>
+      <tr><td>Monthly / yearly saved</td><td>Live vs hosted baseline</td></tr>
+    </table>
+    <h3>Pricing basis</h3>
+    <table>
+      <tr><th>Hosted equivalent</th><th>Monthly estimate</th></tr>
+      <tr><td>LLM inference (64k)</td><td class="down">~$120–$240</td></tr>
+      <tr><td>Web search API</td><td class="down">~$25–$50</td></tr>
+      <tr><td>Embeddings / memory</td><td class="down">~$3–$8</td></tr>
+      <tr><td>Telegram / WhatsApp bridge SaaS</td><td class="down">~$80–$160</td></tr>
+      <tr><td>Hosted ticketing</td><td class="down">~$60–$150</td></tr>
+      <tr><td><strong>Total</strong></td><td class="down"><strong>~$288–$608 / month</strong></td></tr>
+      <tr><td>Self-hosted software</td><td class="up"><strong>$0</strong></td></tr>
+      <tr><td><strong>Net saved</strong></td><td class="up"><strong>~$300–$600 / month</strong></td></tr>
+    </table>
+    <h3>Cost model formula</h3>
+    <pre><code>def compute_monthly_savings(prompts, completions, searches, agents=1):
+    llm = (prompts * 2.5 + completions * 10) / 1_000_000
+    search = searches * 0.005
+    seats = agents * 29
+    hosted = llm + search + seats + 80
+    return max(hosted, 0)</code></pre>
+    <h3>How to run</h3>
+    <pre><code>cd /home/<user>/helpdesk-agent/admin
+python3 -m http.server 8081
+# Open http://localhost:8081/admin-dashboard.html</code></pre>
+  </div>
+
   <div id="hero-security" class="panel">
     <strong style="color:var(--cyan);">Security Model</strong>
     <div class="meta">This agent will be public-facing. Treat it like a shared service from day one.</div>
@@ -272,16 +310,25 @@ WantedBy=multi-user.target</code></pre>
     <strong style="color:var(--cyan);">Runbook Essentials</strong>
     <div class="grid-2">
       <div>
-        <h3>Onboarding</h3>
-        <pre><code># create venv
-python3.11 -m venv ~/hermes-venv
-source ~/hermes-venv/bin/activate
-
-# install Hermes
-git clone https://github.com/NousResearch/Hermes.git
-cd Hermes
-pip install -e .</code></pre>
+        <h3>Ticket adapter registry</h3>
+        <pre><code>from ticket_platforms.registry import get
+platform = get("osticket")
+platform.create_ticket(...)</code></pre>
       </div>
+      <div>
+        <h3>Email ingestion</h3>
+        <pre><code>from ticket_platforms.email import EmailTicketAdapter
+adapter = EmailTicketAdapter(
+    imap_host="imap.example.com",
+    imap_port=993,
+    username="...",
+    password="...",
+    ticket_platform="osticket",
+)
+adapter.sync_unread()</code></pre>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:14px">
       <div>
         <h3>Systemd</h3>
         <pre><code>[Unit]
@@ -295,6 +342,12 @@ WorkingDirectory=/opt/hermes
 ExecStart=/opt/hermes/venv/bin/python main.py
 Restart=always</code></pre>
       </div>
+      <div>
+        <h3>Maintenance</h3>
+        <pre><code>systemctl restart llama-cpp-server
+systemctl restart hermes-agent
+journalctl -u hermes-agent -f</code></pre>
+      </div>
     </div>
     <div class="meta">Maintain quarterly restore test: snapshot VM, restore into fresh instance, verify ticket + search + messaging path works end-to-end.</div>
   </div>
@@ -304,9 +357,10 @@ Restart=always</code></pre>
     <ul>
       <li><input type="checkbox"> VM provisioned and SSH key-only access enabled</li>
       <li><input type="checkbox"> UFW enabled (22/80/443 only)</li>
-      <li><input type="checkbox"> Domain + TLS via Let&rsquo;s Encrypt or Caddy</li>
+      <li><input type="checkbox"> Domain + TLS via Let's Encrypt or Caddy</li>
       <li><input type="checkbox"> Hermes installed + systemd unit running + logs clean</li>
       <li><input type="checkbox"> Telegram bot configured and verified</li>
+      <li><input type="checkbox"> osTicket / Zammad / email adapter configured</li>
       <li><input type="checkbox"> At least one ticket created and closed via agent</li>
       <li><input type="checkbox"> SearXNG up and responding on a subpath</li>
       <li><input type="checkbox"> Backup schedule for DB + configs defined and tested</li>
