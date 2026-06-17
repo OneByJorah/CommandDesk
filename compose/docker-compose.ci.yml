@@ -1,0 +1,19 @@
+services:
+  hermes:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ../:/app
+    environment:
+      - OSTICKET_BASE_URL=${OSTICKET_BASE_URL:-https://helpdesk.example.com}
+      - OSTICKET_API_KEY=${OSTICKET_API_KEY:-}
+    command: >
+      bash -c "pip install requests fastapi uvicorn pydantic -q &&
+               python -m py_compile ticket_platforms/base.py &&
+               python -m py_compile ticket_platforms/registry.py &&
+               python -m py_compile ticket_platforms/osticket.py &&
+               python -m py_compile ticket_platforms/zammad.py &&
+               python -m py_compile ticket_platforms/email.py &&
+               python -m py_compile memory_setup.py &&
+               echo 'ok'"
+    depends_on: []
