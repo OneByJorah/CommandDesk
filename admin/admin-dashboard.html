@@ -1,141 +1,575 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>J1 Helpdesk Admin Dashboard</title>
-<style>
-  :root{--bg:#0b0c10;--panel:#1f2833;--text:#c5c6c7;--cyan:#66fcf1;--cyan-dim:#45a29e;--red:#ff2e63;--yellow:#fce38a;--green:#94fc13;--border:#2a2f3a}
-  *{box-sizing:border-box}
-  html,body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:0;padding:0;line-height:1.55}
-  .container{max-width:1200px;margin:0 auto;padding:28px 20px 60px}
-  h1{color:var(--cyan);font-size:1.9rem;margin-bottom:4px}
-  .lead{color:#9aa3ad;margin-bottom:22px}
-  table{width:100%;border-collapse:collapse;margin:12px 0}
-  th,td{text-align:left;padding:10px;border-bottom:1px solid var(--border);font-size:.92rem}
-  th{color:var(--cyan)}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin:14px 0}
-  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-  @media(max-width:860px){.grid{grid-template-columns:1fr}}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
-  .kpi .num{color:var(--yellow);font-size:1.6rem;font-weight:700}
-  .kpi .lbl{color:var(--cyan-dim);font-size:.8rem;margin-top:4px}
-  .up{color:var(--green)}
-  .down{color:var(--red)}
-  code{background:var(--bg);padding:2px 6px;border-radius:4px;color:var(--yellow);font-size:.9em}
-  pre{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;overflow-x:auto;color:#d8d8d8;font-size:.88rem}
-  .nav a{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.88rem;color:var(--cyan);text-decoration:none;margin:2px;display:inline-block}
-  .nav a:hover{border-color:var(--cyan)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J1 Helpdesk Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #60a5fa; }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .card-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .card-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+        .metric-good { color: #22c55e; }
+        .metric-warn { color: #f59e0b; }
+        .metric-bad { color: #ef4444; }
+        .metric-info { color: #60a5fa; }
+
+        .section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        tr:hover td { background: #0f172a; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-open { background: #1e3a5f; color: #60a5fa; }
+        .badge-pending { background: #422006; color: #fbbf24; }
+        .badge-closed { background: #14532d; color: #4ade80; }
+        .badge-urgent { background: #450a0a; color: #f87171; }
+
+        .progress-bar {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .progress-blue { background: #60a5fa; }
+        .progress-green { background: #22c55e; }
+        .progress-yellow { background: #f59e0b; }
+        .progress-red { background: #ef4444; }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        .service-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: #0f172a;
+            border-radius: 8px;
+        }
+        .service-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+        .service-info {
+            flex: 1;
+        }
+        .service-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .service-status {
+            font-size: 0.625rem;
+            color: #64748b;
+        }
+
+        .refresh-btn {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .refresh-btn:hover { background: #475569; }
+
+        .cost-display {
+            text-align: center;
+            padding: 2rem;
+        }
+        .cost-amount {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .cost-period {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .log-entry {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-left: 3px solid #334155;
+            margin-bottom: 0.25rem;
+            background: #0f172a;
+        }
+        .log-entry.error { border-left-color: #ef4444; }
+        .log-entry.warn { border-left-color: #f59e0b; }
+        .log-entry.info { border-left-color: #60a5fa; }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .tab {
+            padding: 0.5rem 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            background: #1e40af;
+            border-color: #3b82f6;
+            color: #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <h1>📊 J1 Helpdesk Admin Dashboard</h1>
-  <p class="lead">Live operational view for the self-hosted AI helpdesk agent.</p>
-
-  <div class="nav">
-    <a href="#overview">Overview</a>
-    <a href="#live-savings">Savings</a>
-    <a href="#pricing-model">Pricing Model</a>
-    <a href="#integration">Integration</a>
-    <a href="#cost-model">Cost Model</a>
-    <a href="#roadmap">Roadmap</a>
-  </div>
-
-  <div id="overview" class="panel">
-    <strong style="color:var(--cyan)">Overview</strong>
-    <div class="grid" style="margin-top:10px">
-      <div class="kpi"><div class="num" id="tickets-open">0</div><div class="lbl">Tickets Open</div></div>
-      <div class="kpi"><div class="num" id="tickets-closed">0</div><div class="lbl">Tickets Closed</div></div>
-      <div class="kpi"><div class="num" id="sessions">0</div><div class="lbl">User Sessions</div></div>
-      <div class="kpi"><div class="num" id="avg-response">0s</div><div class="lbl">Avg Response</div></div>
-      <div class="kpi"><div class="num up" id="monthly-savings">$0</div><div class="lbl">Monthly Saved</div></div>
-      <div class="kpi"><div class="num up" id="yearly-savings">$0</div><div class="lbl">Yearly Saved</div></div>
+    <div class="header">
+        <h1>🤖 J1 Helpdesk Admin</h1>
+        <div class="status">
+            <div class="status-dot"></div>
+            <span>All systems operational</span>
+            <button class="refresh-btn" onclick="refreshData()">⟳ Refresh</button>
+        </div>
     </div>
-  </div>
 
-  <div id="live-savings" class="panel">
-    <strong style="color:var(--cyan)">Live Price Comparison</strong>
-    <p class="lead">If this stack were replaced by common hosted AI APIs, here’s the equivalent estimated spend.</p>
-    <table>
-      <tr><th>Scenario</th><th>Equivalent Service</th><th>Pricing Basis</th><th>Monthly Estimate</th></tr>
-      <tr><td>LLM Inference (64k context)</td><td>OpenAI GPT-4o class</td><td>~$2.50 / 1M input + $10 / 1M output</td><td class="down">~$120–$240</td></tr>
-      <tr><td>Search API replacement</td><td>Bing Web Search / SerpAPI</td><td>~$5 / 1k queries</td><td class="down">~$25–$50</td></tr>
-      <tr><td>Embeddings / memory</td><td>OpenAI text-embedding-3-large</td><td>~$0.13 / 1M tokens</td><td class="down">~$3–$8</td></tr>
-      <tr><td>Telegram / WhatsApp bridge SaaS</td><td>Intercom / Zendesk / Twilio</td><td>seat + message fees</td><td class="down">~$80–$160</td></tr>
-      <tr><td>Hosted ticketing</td><td>Zendesk / Freshdesk</td><td>$19–$49 per agent / month</td><td class="down">~$60–$150</td></tr>
-      <tr><td><strong>Total hosted estimate</strong></td><td>—</td><td>—</td><td class="down"><strong>~$288–$608 / month</strong></td></tr>
-      <tr><td><strong>Self-hosted cost</strong></td><td>—</td><td>—</td><td class="up"><strong>$0 software + VM infra</strong></td></tr>
-      <tr><td><strong>Net monthly saved</strong></td><td>—</td><td>—</td><td class="up"><strong id="net-saved">$300–$600</strong></td></tr>
-    </table>
-  </div>
+    <div class="container">
+        <!-- Key Metrics -->
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Active Sessions</span>
+                    <span class="metric-info">⟳ Live</span>
+                </div>
+                <div class="card-value" id="active-sessions">12</div>
+                <div class="card-subtitle">Last 24h peak: 47</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Open Tickets</span>
+                    <span class="metric-warn">⚠ Needs attention</span>
+                </div>
+                <div class="card-value metric-warn" id="open-tickets">23</div>
+                <div class="card-subtitle">8 created today</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Tokens Used</span>
+                    <span class="metric-info">📊 Today</span>
+                </div>
+                <div class="card-value" id="tokens-today">1.2M</div>
+                <div class="card-subtitle">Input: 800K / Output: 400K</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Est. Cost</span>
+                    <span class="metric-good">💰 Low</span>
+                </div>
+                <div class="card-value" id="cost-today">$0.00</div>
+                <div class="card-subtitle">Local LLM: $0.00/1M tokens</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Avg Response</span>
+                    <span class="metric-good">⚡ Fast</span>
+                </div>
+                <div class="card-value" id="avg-response">3.2s</div>
+                <div class="card-subtitle">P95: 8.1s / P99: 12.4s</div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Rate Limit Hits</span>
+                    <span class="metric-info">🛡️ Blocked</span>
+                </div>
+                <div class="card-value" id="rate-limits">3</div>
+                <div class="card-subtitle">2 unique users</div>
+            </div>
+        </div>
 
-  <div id="pricing-model" class="panel">
-    <strong style="color:var(--cyan)">Admin Pricing Model</strong>
-    <p class="lead">How the dashboard calculates <code>monthly saved</code>.</p>
-    <table>
-      <tr><th>Input / Metric</th><th>Source</th><th>Hosted Baseline</th></tr>
-      <tr><td>LLM requests</td><td>usage.log</td><td>open weights equivalent → GPT-4.1 / GPT-4o</td></tr>
-      <tr><td>Tokens in</td><td>llama.cpp prompt_eval</td><td>$2.50 / 1M</td></tr>
-      <tr><td>Tokens out</td><td>llama.cpp completion</td><td>$10 / 1M</td></tr>
-      <tr><td>Search calls</td><td>tool usage counter</td><td>$5 / 1k</td></tr>
-      <tr><td>Ticket channels</td><td>platform registry</td><td>Twilio / Intercom seat</td></tr>
-      <tr><td>Agents</td><td>admin users</td><td>$29/agent/mo</td></tr>
-    </table>
-  </div>
+        <!-- Service Health -->
+        <div class="section">
+            <div class="section-title">🔧 Service Health</div>
+            <div class="service-grid">
+                <div class="service-item">
+                    <div class="service-icon" style="background:#1e3a5f;">🧠</div>
+                    <div class="service-info">
+                        <div class="service-name">llama.cpp</div>
+                        <div class="service-status metric-good">● Running — 6.2GB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#1e3a5f;">🤖</div>
+                    <div class="service-info">
+                        <div class="service-name">Helpdesk Agent</div>
+                        <div class="service-status metric-good">● Running — 1.1GB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#1e3a5f;">👑</div>
+                    <div class="service-info">
+                        <div class="service-name">Admin Agent</div>
+                        <div class="service-status metric-good">● Running — 800MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#14532d;">📚</div>
+                    <div class="service-info">
+                        <div class="service-name">ChromaDB</div>
+                        <div class="service-status metric-good">● Running — 1.4GB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#14532d;">🔍</div>
+                    <div class="service-info">
+                        <div class="service-name">SearXNG</div>
+                        <div class="service-status metric-good">● Running — 600MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#422006;">🗄️</div>
+                    <div class="service-info">
+                        <div class="service-name">PostgreSQL</div>
+                        <div class="service-status metric-good">● Running — 400MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#422006;">⚡</div>
+                    <div class="service-info">
+                        <div class="service-name">Redis</div>
+                        <div class="service-status metric-good">● Running — 120MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#422006;">🔄</div>
+                    <div class="service-info">
+                        <div class="service-name">n8n</div>
+                        <div class="service-status metric-good">● Running — 350MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#1e3a5f;">📧</div>
+                    <div class="service-info">
+                        <div class="service-name">Email Fetcher</div>
+                        <div class="service-status metric-good">● Running — 200MB RAM</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <div class="service-icon" style="background:#1e3a5f;">🌐</div>
+                    <div class="service-info">
+                        <div class="service-name">Nginx</div>
+                        <div class="service-status metric-good">● Running — 50MB RAM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <div id="integration" class="panel">
-    <strong style="color:var(--cyan)">Ticket Platforms &amp; Email</strong>
-    <p class="lead">Extend Hermes with adapters so any platform is just a config change.</p>
-    <table>
-      <tr><th>Platform</th><th>Type</th><th>Status</th><th>Notes</th></tr>
-      <tr><td>osTicket</td><td>Ticketing</td><td>Implemented</td><td>REST API wrapper included</td></tr>
-      <tr><td>Zammad</td><td>Ticketing</td><td>Planned</td><td>REST API adapter</td></tr>
-      <tr><td>Thelia / GLPI</td><td>Ticketing</td><td>Planned</td><td>Community adapters</td></tr>
-      <tr><td>Email → Ticket</td><td>Ingestion</td><td>Planned</td><td>IMAP poller or IMAP IDLE bridge</td></tr>
-      <tr><td>Telegram</td><td>Twilio Channel</td><td>Planned</td><td>First-class channel</td></tr>
-      <tr><td>WhatsApp</td><td>Twilio Channel</td><td>Planned</td><td>Twilio sandbox or Meta Cloud</td></tr>
-      <tr><td>Slack / Discord</td><td>Channel</td><td>Optional</td><td>Extra bridge layer</td></tr>
-    </table>
-  </div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('tickets')">🎫 Tickets</div>
+            <div class="tab" onclick="switchTab('sessions')">💬 Sessions</div>
+            <div class="tab" onclick="switchTab('costs')">💰 Costs</div>
+            <div class="tab" onclick="switchTab('logs')">📋 Audit Log</div>
+        </div>
 
-  <div id="cost-model" class="panel">
-    <strong style="color:var(--cyan)">Cost Model Code</strong>
-    <p class="lead">Drop-in formula for the dashboard live price counter.</p>
-    <pre><code># Example Python snippet for admin dashboard
-def compute_monthly_savings(prompts, completions, searches, agents=1):
-    llm = (prompts * 2.5 + completions * 10) / 1_000_000
-    search = searches * 0.005
-    seats = agents * 29
-    hosted = llm + search + seats + 80  # baseline ops/ticketing
-    return max(hosted, 0)
+        <!-- Tickets Table -->
+        <div class="section" id="tab-tickets">
+            <div class="section-title">🎫 Recent Tickets</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Subject</th>
+                        <th>User</th>
+                        <th>Platform</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>a1b2c3</code></td>
+                        <td>Cannot access dashboard</td>
+                        <td>user@example.com</td>
+                        <td>📧 Email</td>
+                        <td><span class="badge badge-open">Open</span></td>
+                        <td><span class="metric-info">Normal</span></td>
+                        <td>2 min ago</td>
+                    </tr>
+                    <tr>
+                        <td><code>d4e5f6</code></td>
+                        <td>Billing invoice question</td>
+                        <td>john@company.com</td>
+                        <td>🎫 osTicket</td>
+                        <td><span class="badge badge-pending">Pending</span></td>
+                        <td><span class="metric-warn">High</span></td>
+                        <td>15 min ago</td>
+                    </tr>
+                    <tr>
+                        <td><code>g7h8i9</code></td>
+                        <td>Password reset not working</td>
+                        <td>jane@startup.io</td>
+                        <td>📱 Freshdesk</td>
+                        <td><span class="badge badge-open">Open</span></td>
+                        <td><span class="metric-bad">Urgent</span></td>
+                        <td>1 hour ago</td>
+                    </tr>
+                    <tr>
+                        <td><code>j0k1l2</code></td>
+                        <td>API rate limiting errors</td>
+                        <td>dev@tech.co</td>
+                        <td>🎫 osTicket</td>
+                        <td><span class="badge badge-closed">Closed</span></td>
+                        <td><span class="metric-info">Normal</span></td>
+                        <td>3 hours ago</td>
+                    </tr>
+                    <tr>
+                        <td><code>m3n4o5</code></td>
+                        <td>Feature request: dark mode</td>
+                        <td>pm@agency.com</td>
+                        <td>📧 Email</td>
+                        <td><span class="badge badge-closed">Closed</span></td>
+                        <td><span class="metric-info">Low</span></td>
+                        <td>5 hours ago</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-def update_live():
-    usage = read_usage_log()
-    saved = compute_monthly_savings(
-        prompts=usage['tokens_in'],
-        completions=usage['tokens_out'],
-        searches=usage['search_calls'],
-        agents=usage['active_agents']
-    )
-    set_dom_text('#net-saved', f"${saved:,.0f}")</code></pre>
-  </div>
+        <!-- Sessions Table -->
+        <div class="section" id="tab-sessions" style="display:none;">
+            <div class="section-title">💬 Active Sessions</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>User</th>
+                        <th>Messages</th>
+                        <th>Platform</th>
+                        <th>Remaining</th>
+                        <th>Expires</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>sess-001</code></td>
+                        <td>user@example.com</td>
+                        <td>8/50</td>
+                        <td>🌐 Web</td>
+                        <td><div class="progress-bar"><div class="progress-fill progress-blue" style="width:84%"></div></div></td>
+                        <td>1h 23m</td>
+                    </tr>
+                    <tr>
+                        <td><code>sess-002</code></td>
+                        <td>john@company.com</td>
+                        <td>23/50</td>
+                        <td>🌐 Web</td>
+                        <td><div class="progress-bar"><div class="progress-fill progress-yellow" style="width:54%"></div></div></td>
+                        <td>45m</td>
+                    </tr>
+                    <tr>
+                        <td><code>sess-003</code></td>
+                        <td>jane@startup.io</td>
+                        <td>47/50</td>
+                        <td>🌐 Web</td>
+                        <td><div class="progress-bar"><div class="progress-fill progress-red" style="width:6%"></div></div></td>
+                        <td>8m</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-  <div id="roadmap" class="panel">
-    <strong style="color:var(--cyan)">Next Implementation Steps</strong>
-    <ol>
-      <li>Add ticket platform registry (`ticket_platforms/registry.py`)</li>
-      <li>Implement `zammad_tool.py` and `email_ticket_tool.py`</li>
-      <li>Build admin FastAPI dashboard service with usage endpoints</li>
-      <li>Wire Hermes tool calls + usage logging into SQLite</li>
-      <li>Deploy admin dashboard at <code>/admin</code> behind auth</li>
-      <li>Push live cost calculations on every request + cron rollup</li>
-    </ol>
-  </div>
+        <!-- Costs -->
+        <div class="section" id="tab-costs" style="display:none;">
+            <div class="section-title">💰 Cost Analytics</div>
+            <div class="grid">
+                <div class="cost-display">
+                    <div class="cost-amount">$0.00</div>
+                    <div class="cost-period">Today (Local LLM)</div>
+                </div>
+                <div class="cost-display">
+                    <div class="cost-amount">$0.00</div>
+                    <div class="cost-period">This Week</div>
+                </div>
+                <div class="cost-display">
+                    <div class="cost-amount">$0.00</div>
+                    <div class="cost-period">This Month</div>
+                </div>
+            </div>
+            <div style="margin-top:1rem;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+                    <span>Input tokens</span>
+                    <span>800K / 1.2M (67%)</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill progress-blue" style="width:67%"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;margin-top:0.75rem;">
+                    <span>Output tokens</span>
+                    <span>400K / 1.2M (33%)</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill progress-green" style="width:33%"></div></div>
+            </div>
+        </div>
 
-  <footer style="margin-top:40px;color:#556070;font-size:.8rem">
-    J1 Helpdesk Admin Dashboard — generated: 2026-06-17
-  </footer>
-</div>
+        <!-- Audit Log -->
+        <div class="section" id="tab-logs" style="display:none;">
+            <div class="section-title">📋 Recent Audit Log</div>
+            <div class="log-entry info"><strong>17:32:01</strong> — Session created — user@example.com from 192.168.1.100</div>
+            <div class="log-entry info"><strong>17:31:45</strong> — Ticket searched — query: "dashboard access" (3 results)</div>
+            <div class="log-entry warn"><strong>17:30:22</strong> — Rate limit warning — session sess-003 at 94% capacity</div>
+            <div class="log-entry info"><strong>17:29:18</strong> — KB search — query: "password reset procedure"</div>
+            <div class="log-entry error"><strong>17:28:55</strong> — LLM timeout — retry succeeded after 2s</div>
+            <div class="log-entry info"><strong>17:28:33</strong> — Ticket updated — ticket a1b2c3 status: pending → open</div>
+            <div class="log-entry info"><strong>17:27:10</strong> — Email processed — new ticket from jane@startup.io</div>
+            <div class="log-entry info"><strong>17:25:44</strong> — Session ended — user@example.com (duration: 45m, messages: 12)</div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+            document.getElementById('tab-' + tab).style.display = 'block';
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function refreshData() {
+            // Simulated refresh — in production this would fetch from API
+            fetch('/admin/health').then(r => r.json()).then(d => {
+                document.querySelector('.status span').textContent = 'All systems operational';
+            }).catch(() => {
+                document.querySelector('.status span').textContent = '⚠ API unreachable';
+            });
+        }
+
+        // Auto-refresh every 30s
+        setInterval(refreshData, 30000);
+    </script>
 </body>
 </html>

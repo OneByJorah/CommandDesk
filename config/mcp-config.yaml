@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════
+# MCP (Model Context Protocol) Client Configuration
+# Connects to external MCP servers (Freshdesk, etc.)
+# ═══════════════════════════════════════════════════
+
+mcp_servers:
+  freshdesk:
+    # Freshdesk MCP Server (NeuraLegion/freshdesk_mcp)
+    # 41 tools for tickets, contacts, companies, KB, etc.
+    transport: stdio
+    command: "node"
+    args:
+      - "/app/mcp-servers/freshdesk/dist/index.js"
+    env:
+      FRESHDESK_DOMAIN: "${FRESHDESK_DOMAIN}"
+      FRESHDESK_API_KEY: "${FRESHDESK_API_KEY}"
+    enabled: true
+    # Which tools to expose to the agent
+    allowed_tools:
+      - list_tickets
+      - view_ticket
+      - create_ticket
+      - search_tickets
+      - update_ticket
+      - list_ticket_conversations
+      - reply_to_ticket
+      - add_note_to_ticket
+      - list_contacts
+      - view_contact
+      - search_contacts
+      - list_companies
+      - view_company
+      - search_solutions
+      - list_solution_categories
+      - list_solution_folders
+      - list_solution_articles
+      - view_solution_article
+
+  # Example: Add more MCP servers here
+  # osticket:
+  #   transport: stdio
+  #   command: "node"
+  #   args: ["/app/mcp-servers/osticket/dist/index.js"]
+  #   env:
+  #     OSTICKET_URL: "${OSTICKET_URL}"
+  #     OSTICKET_API_KEY: "${OSTICKET_API_KEY}"
+  #   enabled: false
+
+# MCP Tool Permissions
+# Control which tools each agent mode can use
+permissions:
+  helpdesk:
+    # Helpdesk agent (end-users) — read-only + update own
+    allowed:
+      - list_tickets
+      - view_ticket
+      - search_tickets
+      - list_ticket_conversations
+      - reply_to_ticket
+      - search_solutions
+      - list_solution_categories
+      - list_solution_folders
+      - list_solution_articles
+      - view_solution_article
+    denied:
+      - create_ticket
+      - add_note_to_ticket
+      - update_ticket
+      - list_contacts
+      - list_companies
+
+  admin:
+    # Admin agent — full access to all tools
+    allowed: ["*"]
+    denied: []
