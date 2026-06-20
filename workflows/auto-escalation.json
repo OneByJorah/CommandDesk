@@ -1,0 +1,74 @@
+{
+  "name": "Helpdesk - Auto Escalation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "escalation-trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.escalation_reason }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-escalation",
+      "name": "Check Escalation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ADMIN_AGENT_URL }}/chat",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ message: 'ESCALATION: ' + $json.ticket.subject + ' - Reason: ' + $json.escalation_reason + '\\n\\nTicket ID: ' + $json.ticket.id + '\\nUser: ' + $json.ticket.user_id }) }}",
+        "options": {}
+      },
+      "id": "notify-admin",
+      "name": "Notify Admin Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "channel": "#helpdesk-escalations",
+        "text": "🚨 Ticket Escalated\n\n**Ticket:** {{ $json.ticket.subject }}\n**User:** {{ $json.ticket.user_id }}\n**Reason:** {{ $json.escalation_reason }}\n\nAdmin Agent has been notified."
+      },
+      "id": "slack-notification",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [850, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Check Escalation", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Escalation": {
+      "main": [
+        [{ "node": "Notify Admin Agent", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Notify Admin Agent": {
+      "main": [
+        [{ "node": "Send Notification", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
