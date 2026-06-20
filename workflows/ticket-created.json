@@ -1,0 +1,74 @@
+{
+  "name": "Helpdesk - Ticket Created Notification",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "ticket-created"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.HELPDESK_AGENT_URL }}/chat",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{ JSON.stringify({ message: 'A new ticket has been created: ' + $json.subject + '\\n\\n' + $json.body + '\\n\\nPlease acknowledge and categorize this ticket.', user_id: $json.user_id, platform: 'system' }) }}",
+        "options": {}
+      },
+      "id": "process-ticket",
+      "name": "Process via Helpdesk Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.response }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-response",
+      "name": "Check Response",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#helpdesk-tickets",
+        "text": "🎫 New Ticket Created\n\n**Subject:** {{ $json.subject }}\n**User:** {{ $json.user_id }}\n\nAgent Response: {{ $json.response }}"
+      },
+      "id": "notify-channel",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [850, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Process via Helpdesk Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process via Helpdesk Agent": {
+      "main": [
+        [{ "node": "Check Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Response": {
+      "main": [
+        [{ "node": "Send Notification", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  }
+}
