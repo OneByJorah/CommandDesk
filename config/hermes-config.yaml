@@ -1,0 +1,126 @@
+# ═══════════════════════════════════════════════════
+# Hermes Agent Configuration - Helpdesk Mode
+# ═══════════════════════════════════════════════════
+
+agent:
+  name: "J1 Helpdesk Agent"
+  mode: helpdesk
+  port: 8080
+  description: "Self-hosted AI helpdesk agent for customer support"
+
+llm:
+  provider: openai-compatible
+  api_base: ${LLM_API_BASE}
+  api_key: "not-needed"
+  model: ${LLM_MODEL}
+  context_length: 65536
+  max_tokens: 2048
+  temperature: 0.3
+  top_p: 0.9
+
+tools:
+  # Helpdesk tools (NO create_ticket for end-users)
+  - name: search_tickets
+    description: "Search user's tickets by keyword, status, or date range"
+    parameters:
+      - name: query
+        type: string
+        description: "Search query"
+      - name: status
+        type: string
+        description: "Filter by status (open, pending, closed)"
+        required: false
+      - name: limit
+        type: integer
+        description: "Max results"
+        default: 10
+
+  - name: get_ticket
+    description: "Get details of a specific ticket by ID"
+    parameters:
+      - name: ticket_id
+        type: string
+        description: "Ticket ID"
+
+  - name: update_ticket
+    description: "Add a reply or update own ticket"
+    parameters:
+      - name: ticket_id
+        type: string
+      - name: message
+        type: string
+        description: "Reply message"
+      - name: status
+        type: string
+        description: "New status (open, closed)"
+        required: false
+
+  - name: close_ticket
+    description: "Close own ticket"
+    parameters:
+      - name: ticket_id
+        type: string
+      - name: reason
+        type: string
+        description: "Reason for closing"
+        required: false
+
+  - name: search_knowledge_base
+    description: "Search knowledge base articles"
+    parameters:
+      - name: query
+        type: string
+      - name: limit
+        type: integer
+        default: 5
+
+  - name: web_search
+    description: "Search the web for information"
+    parameters:
+      - name: query
+        type: string
+      - name: limit
+        type: integer
+        default: 5
+
+  - name: create_ticket
+    description: "Create a new ticket (DISABLED in helpdesk mode)"
+    enabled: false
+
+security:
+  rate_limiting:
+    enabled: true
+    max_requests_per_session: ${RATE_LIMIT_PER_SESSION}
+    window_seconds: ${RATE_LIMIT_WINDOW}
+    max_message_length: ${MAX_MESSAGE_LENGTH}
+    max_session_duration: ${MAX_SESSION_DURATION}
+  content_filter:
+    enabled: true
+    block_patterns:
+      - "password"
+      - "credit_card"
+      - "ssn"
+  audit_log:
+    enabled: true
+    log_all_requests: true
+
+session:
+  storage: redis
+  redis_url: ${REDIS_URL}
+  ttl: ${MAX_SESSION_DURATION}
+
+knowledge_base:
+  backend: chroma
+  url: ${CHROMA_URL}
+  collection: helpdesk-kb
+  embedding_model: all-MiniLM-L6-v2
+
+database:
+  url: ${POSTGRES_URL}
+  pool_size: 5
+  max_overflow: 10
+
+logging:
+  level: INFO
+  format: json
+  file: /app/data/logs/agent.log

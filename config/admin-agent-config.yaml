@@ -1,0 +1,169 @@
+# ═══════════════════════════════════════════════════
+# Hermes Agent Configuration - Admin Mode
+# ═══════════════════════════════════════════════════
+
+agent:
+  name: "J1 Helpdesk Admin"
+  mode: admin
+  port: 8082
+  description: "Admin agent for helpdesk management - full access"
+
+llm:
+  provider: openai-compatible
+  api_base: ${LLM_API_BASE}
+  api_key: "not-needed"
+  model: ${LLM_MODEL}
+  context_length: 65536
+  max_tokens: 4096
+  temperature: 0.2
+  top_p: 0.9
+
+tools:
+  # Full ticket access
+  - name: search_tickets
+    description: "Search ALL tickets across all users"
+    parameters:
+      - name: query
+        type: string
+      - name: status
+        type: string
+        required: false
+      - name: user_id
+        type: string
+        required: false
+      - name: limit
+        type: integer
+        default: 50
+
+  - name: get_ticket
+    description: "Get any ticket details"
+    parameters:
+      - name: ticket_id
+        type: string
+
+  - name: update_ticket
+    description: "Update any ticket"
+    parameters:
+      - name: ticket_id
+        type: string
+      - name: message
+        type: string
+      - name: status
+        type: string
+        required: false
+      - name: assignee
+        type: string
+        required: false
+
+  - name: close_ticket
+    description: "Close any ticket"
+    parameters:
+      - name: ticket_id
+        type: string
+      - name: reason
+        type: string
+        required: false
+
+  - name: create_ticket
+    description: "Create a new ticket on behalf of a user"
+    enabled: true
+    parameters:
+      - name: user_id
+        type: string
+      - name: subject
+        type: string
+      - name: body
+        type: string
+      - name: priority
+        type: string
+        required: false
+
+  - name: list_all_tickets
+    description: "List all tickets with pagination"
+    parameters:
+      - name: page
+        type: integer
+        default: 1
+      - name: per_page
+        type: integer
+        default: 25
+      - name: status
+        type: string
+        required: false
+
+  - name: cost_analytics
+    description: "Get token usage and cost estimates"
+    parameters:
+      - name: period
+        type: string
+        default: "today"
+      - name: group_by
+        type: string
+        default: "session"
+
+  - name: system_health
+    description: "Get system health metrics"
+    parameters: []
+
+  - name: search_knowledge_base
+    description: "Search knowledge base"
+    parameters:
+      - name: query
+        type: string
+      - name: limit
+        type: integer
+        default: 10
+
+  - name: web_search
+    description: "Search the web"
+    parameters:
+      - name: query
+        type: string
+
+  - name: manage_knowledge_base
+    description: "Add/remove knowledge base articles"
+    parameters:
+      - name: action
+        type: string
+      - name: content
+        type: string
+      - name: source
+        type: string
+
+security:
+  rate_limiting:
+    enabled: true
+    max_requests_per_session: 200
+    window_seconds: 3600
+    max_message_length: 8000
+    max_session_duration: 14400
+  auth:
+    required: true
+    api_keys:
+      - ${ADMIN_API_KEY}
+  audit_log:
+    enabled: true
+    log_all_requests: true
+
+session:
+  storage: redis
+  redis_url: ${REDIS_URL}
+  ttl: 14400
+  db: 1
+
+knowledge_base:
+  backend: chroma
+  url: ${CHROMA_URL}
+  collection: helpdesk-kb
+  embedding_model: all-MiniLM-L6-v2
+  manage: true
+
+database:
+  url: ${POSTGRES_URL}
+  pool_size: 10
+  max_overflow: 20
+
+logging:
+  level: INFO
+  format: json
+  file: /app/data/logs/admin-agent.log

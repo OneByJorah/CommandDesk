@@ -1,11 +1,29 @@
-*.pyc
-__pycache__
+# Secrets
 .env
+.secrets/
+certs/
+*.pem
+*.key
+
+# Models
+models/
 *.gguf
-*.ggml
+
+# Data
+data/
+knowledge-base/*.json
+knowledge-base/*.txt
+email-queue/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
 .DS_Store
-.venv
-venv
-node_modules
-dist
-build
+Thumbs.db
+
+# Logs
+*.log
+data/logs/

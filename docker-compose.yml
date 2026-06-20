@@ -1,0 +1,370 @@
+version: "3.9"
+
+services:
+  # ═══════════════════════════════════════════════════
+  # LLM Inference (llama.cpp with Qwen2.5-7B)
+  # ═══════════════════════════════════════════════════
+  llama:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: helpdesk-llama
+    ports:
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - ./models:/models:ro
+    environment:
+      - LLAMA_ARG_MODEL=/models/qwen2.5-7b-instruct-q4_k_m.gguf
+      - LLAMA_ARG_PORT=8081
+      - LLAMA_ARG_CTX_SIZE=65536
+      - LLAMA_ARG_N_BATCH=512
+      - LLAMA_ARG_THREADS=6
+      - LLAMA_ARG_HOST=0.0.0.0
+      - LLAMA_ARG_N_GL=0
+    deploy:
+      resources:
+        limits:
+          memory: 7G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # Helpdesk Agent (Hermes - restricted, no ticket creation)
+  # ═══════════════════════════════════════════════════
+  helpdesk-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helpdesk-agent
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+      - ./ticket_platforms:/app/ticket_platforms:ro
+      - ./scripts:/app/scripts:ro
+      - ./knowledge-base:/app/knowledge-base:ro
+      - hermes-data:/app/data
+    environment:
+      - HERMES_CONFIG=/app/config/hermes-config.yaml
+      - LLM_API_BASE=http://llama:8081/v1
+      - LLM_MODEL=qwen2.5-7b-instruct
+      - CHROMA_URL=http://chroma:8000
+      - SEARX_URL=http://searxng:8080
+      - POSTGRES_URL=postgresql://helpdesk:${DB_PASSWORD:-helpdesk_pass}@postgres:5432/helpdesk
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
+      - RATE_LIMIT_PER_SESSION=${RATE_LIMIT_PER_SESSION:-50}
+      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-3600}
+      - MAX_MESSAGE_LENGTH=${MAX_MESSAGE_LENGTH:-4000}
+      - MAX_SESSION_DURATION=${MAX_SESSION_DURATION:-7200}
+      - AGENT_MODE=helpdesk
+      - ALLOW_CREATE_TICKET=false
+      - TZ=UTC
+    depends_on:
+      llama:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # Admin Agent (Hermes - full access, plug-in to main Hermes)
+  # ═══════════════════════════════════════════════════
+  admin-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helpdesk-admin-agent
+    ports:
+      - "127.0.0.1:8082:8082"
+    volumes:
+      - ./config:/app/config:ro
+      - ./ticket_platforms:/app/ticket_platforms:ro
+      - ./scripts:/app/scripts:ro
+      - ./knowledge-base:/app/knowledge-base:ro
+      - hermes-admin-data:/app/data
+    environment:
+      - HERMES_CONFIG=/app/config/admin-agent-config.yaml
+      - LLM_API_BASE=http://llama:8081/v1
+      - LLM_MODEL=qwen2.5-7b-instruct
+      - CHROMA_URL=http://chroma:8000
+      - SEARX_URL=http://searxng:8080
+      - POSTGRES_URL=postgresql://helpdesk:${DB_PASSWORD:-helpdesk_pass}@postgres:5432/helpdesk
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/1
+      - AGENT_MODE=admin
+      - ALLOW_CREATE_TICKET=true
+      - TZ=UTC
+    depends_on:
+      llama:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # ChromaDB (Knowledge Base Vector Store)
+  # ═══════════════════════════════════════════════════
+  chroma:
+    image: chromadb/chroma:0.5.23
+    container_name: helpdesk-chroma
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_PORT=8000
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ALLOW_RESET=true
+      - CHROMA_AUTH_TOKEN=${CHROMA_AUTH_TOKEN:-chromadb_token_change_me}
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # SearXNG (Self-hosted Web Search)
+  # ═══════════════════════════════════════════════════
+  searxng:
+    image: searxng/searxng:latest
+    container_name: helpdesk-searxng
+    ports:
+      - "127.0.0.1:8888:8080"
+    volumes:
+      - searxng-data:/etc/searxng
+      - ./config/searxng-settings.yml:/etc/searxng/settings.yml:ro
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888/
+      - SEARXNG_BIND_ADDRESS=0.0.0.0
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8888/search?q=test&format=json"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # n8n (Workflow Automation)
+  # ═══════════════════════════════════════════════════
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: helpdesk-n8n
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./workflows:/home/node/.n8n/workflows:ro
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=UTC
+      - N8N_CUSTOM_ENDPOINTS=webhook
+      - N8N_USER_MANAGEMENT_JWT_SECRET=${JWT_SECRET:-jwt_secret_change_me_please}
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # PostgreSQL (Ticket Database + Agent State)
+  # ═══════════════════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: helpdesk-postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_DB=helpdesk
+      - POSTGRES_USER=helpdesk
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-helpdesk_pass}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --lc-collate=C --lc-ctype=C
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpdesk"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # Redis (Caching + Session Store + Rate Limiting)
+  # ═══════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: helpdesk-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis_pass}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # Nginx (Reverse Proxy + Security Headers + Rate Limiting)
+  # ═══════════════════════════════════════════════════
+  nginx:
+    image: nginx:alpine
+    container_name: helpdesk-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./admin:/app/admin:ro
+      - ./certs:/etc/nginx/certs:ro
+      - nginx-cache:/var/cache/nginx
+    depends_on:
+      - helpdesk-agent
+      - admin-agent
+      - n8n
+      - searxng
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
+
+  # ═══════════════════════════════════════════════════
+  # Email Fetcher (IMAP → Ticket via helpdesk-agent)
+  # ═══════════════════════════════════════════════════
+  email-fetcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.email
+    container_name: helpdesk-email-fetcher
+    volumes:
+      - ./config:/app/config:ro
+      - ./ticket_platforms:/app/ticket_platforms:ro
+      - email-queue:/app/queue
+    environment:
+      - IMAP_HOST=${IMAP_HOST:-}
+      - IMAP_PORT=${IMAP_PORT:-993}
+      - IMAP_USER=${IMAP_USER:-}
+      - IMAP_PASSWORD=${IMAP_PASSWORD:-}
+      - IMAP_FOLDER=INBOX
+      - POLL_INTERVAL=${POLL_INTERVAL:-60}
+      - TICKET_PLATFORM=${TICKET_PLATFORM:-osticket}
+      - HELPDESK_AGENT_URL=http://helpdesk-agent:8080
+      - POSTGRES_URL=postgresql://helpdesk:${DB_PASSWORD:-helpdesk_pass}@postgres:5432/helpdesk
+      - TZ=UTC
+    depends_on:
+      helpdesk-agent:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
+
+# ═══════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════
+networks:
+  helpdesk-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ═══════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════
+volumes:
+  hermes-data:
+    driver: local
+  hermes-admin-data:
+    driver: local
+  chroma-data:
+    driver: local
+  searxng-data:
+    driver: local
+  n8n-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  nginx-cache:
+    driver: local
+  email-queue:
+    driver: local

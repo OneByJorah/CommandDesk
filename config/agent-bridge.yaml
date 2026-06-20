@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════
+# Agent Bridge Configuration
+# Allows main Hermes to delegate to helpdesk agent
+# ═══════════════════════════════════════════════════
+
+bridges:
+  helpdesk-agent:
+    url: "http://helpdesk-agent:8080"
+    description: "Customer-facing helpdesk agent (restricted tools)"
+    timeout: 30
+    retry: 2
+    # When main Hermes receives "helpdesk" or "ticket" intent, delegate here
+    triggers:
+      - "ticket"
+      - "helpdesk"
+      - "support"
+      - "my issue"
+      - "my ticket"
+
+  admin-agent:
+    url: "http://admin-agent:8082"
+    description: "Admin agent for helpdesk management"
+    timeout: 60
+    retry: 1
+    auth:
+      header: "X-Admin-Key"
+      key: ${ADMIN_API_KEY}
+    triggers:
+      - "admin"
+      - "manage tickets"
+      - "cost"
+      - "analytics"
+      - "system health"
+
+# How main Hermes should route:
+# 1. Customer asks about ticket → delegate to helpdesk-agent
+# 2. Admin asks for analytics → delegate to admin-agent
+# 3. Unknown → handle locally with general knowledge
