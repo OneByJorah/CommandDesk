@@ -1,4 +1,4 @@
-.PHONY: help setup start stop restart logs clean test
+.PHONY: help setup start stop restart logs clean test lint format
 
 # Default target
 help: ## Show this help
@@ -109,3 +109,44 @@ test-api: ## Test helpdesk agent API
 	curl -s -X POST http://localhost:8080/chat \
 		-H "Content-Type: application/json" \
 		-d '{"user_id": "test@example.com", "message": "Hello, I need help"}' | python3 -m json.tool
+
+# ═══════════════════════════════════════════════════
+# Testing & Linting
+# ═══════════════════════════════════════════════════
+
+test: ## Run tests
+	python3 -m pytest tests/ -v --tb=short
+
+test-coverage: ## Run tests with coverage report
+	python3 -m pytest tests/ -v --tb=short --cov=scripts --cov=ticket_platforms --cov-report=term
+
+lint: ## Run linters
+	@echo "=== Flake8 ==="
+	flake8 scripts/ ticket_platforms/ --max-line-length=120 --ignore=E501,W503,E203 || true
+	@echo ""
+	@echo "=== Black (check) ==="
+	black --check --diff --line-length=120 scripts/ ticket_platforms/ || true
+
+format: ## Format code with black
+	black --line-length=120 scripts/ ticket_platforms/
+
+# ═══════════════════════════════════════════════════
+# Security
+# ═══════════════════════════════════════════════════
+
+security-scan: ## Run security scans (requires gitleaks, trivy)
+	@echo "=== Gitleaks ==="
+	@gitleaks detect --source . --verbose --no-git 2>/dev/null || echo "gitleaks not installed or scan complete"
+	@echo ""
+	@echo "=== Trivy ==="
+	@trivy fs --severity HIGH,CRITICAL --ignore-unfixed . 2>/dev/null || echo "trivy not installed or scan complete"
+
+# ═══════════════════════════════════════════════════
+# Analytics
+# ═══════════════════════════════════════════════════
+
+analytics: ## Generate analytics report
+	docker compose exec helpdesk-agent python3 scripts/analytics.py --hours 24
+
+analytics-weekly: ## Generate weekly analytics report
+	docker compose exec helpdesk-agent python3 scripts/analytics.py --hours 168 --format markdown

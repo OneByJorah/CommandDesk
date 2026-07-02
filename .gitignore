@@ -1,5 +1,7 @@
 # Secrets
 .env
+.env.*
+!.env.example
 .secrets/
 certs/
 *.pem
@@ -19,11 +21,47 @@ email-queue/
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+.DS_Store?
 
 # Logs
 *.log
 data/logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# CI / Security
+trivy-results*.sarif
+gitleaks-report.json
+
+# Temp
+tmp/
+temp/
+*.tmp

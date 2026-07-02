@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -14,10 +14,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ── Production stage ──────────────────────────────────
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    APP_USER=appuser \
+    APP_UID=1001
+
+RUN groupadd -r ${APP_USER} && \
+    useradd -r -g ${APP_USER} -u ${APP_UID} -d /app -s /sbin/nologin ${APP_USER}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY ticket_platforms /app/ticket_platforms
 COPY scripts/email_fetcher.py /app/email_fetcher.py
 COPY config/ /app/config/
 
-RUN mkdir -p /app/queue /app/data/logs
+RUN mkdir -p /app/queue /app/data/logs && \
+    chown -R ${APP_USER}:${APP_USER} /app
+
+USER ${APP_USER}
 
 CMD ["python", "/app/email_fetcher.py"]

@@ -55,7 +55,7 @@ services:
       - LLM_MODEL=qwen2.5-7b-instruct
       - CHROMA_URL=http://chroma:8000
       - SEARX_URL=http://searxng:8080
-      - POSTGRES_URL=postgresql://helpdesk:${DB_PASSWORD:-helpdesk_pass}@postgres:5432/helpdesk
+      - POSTGRES_URL=postgresql://helpdesk:***@postgres:5432/helpdesk
       - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
       - RATE_LIMIT_PER_SESSION=${RATE_LIMIT_PER_SESSION:-50}
       - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-3600}
@@ -78,6 +78,11 @@ services:
         limits:
           memory: 2G
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     networks:
       - helpdesk-net
 
@@ -336,85 +341,85 @@ services:
     networks:
       - helpdesk-net
 
-# ═══════════════════════════════════════════════════
-# WhatsApp Webhook Receiver
-# ═══════════════════════════════════════════════════
-whatsapp-webhook:
-  build:
-    context: .
-    dockerfile: Dockerfile.whatsapp
-  container_name: helpdesk-whatsapp
-  ports:
-    - "127.0.0.1:9090:9090"
-    - "0.0.0.0:8383:8383"
-  volumes:
-    - ./config:/app/config:ro
-    - ./scripts:/app/scripts:ro
-  environment:
-    - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
-    - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
-    - WHATSAPP_WEBHOOK_SECRET=${WHATSAPP_WEBHOOK_SECRET:-change_me}
-    - ADMIN_PHONE_NUMBER=${ADMIN_PHONE_NUMBER}
-    - HELPDESK_AGENT_URL=http://helpdesk-agent:8080
-    - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
-    - WHATSAPP_RATE_LIMIT_PER_MINUTE=${WHATSAPP_RATE_LIMIT_PER_MINUTE:-10}
-  depends_on:
-    helpdesk-agent:
-      condition: service_started
-    redis:
-      condition: service_healthy
-  deploy:
-    resources:
-      limits:
-        memory: 500M
-  restart: unless-stopped
-  networks:
-    - helpdesk-net
+  # ═══════════════════════════════════════════════════
+  # WhatsApp Webhook Receiver
+  # ═══════════════════════════════════════════════════
+  whatsapp-webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.whatsapp
+    container_name: helpdesk-whatsapp
+    ports:
+      - "127.0.0.1:9090:9090"
+      - "0.0.0.0:8383:8383"
+    volumes:
+      - ./config:/app/config:ro
+      - ./scripts:/app/scripts:ro
+    environment:
+      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - WHATSAPP_WEBHOOK_SECRET=${WHATSAPP_WEBHOOK_SECRET:-change_me}
+      - ADMIN_PHONE_NUMBER=${ADMIN_PHONE_NUMBER}
+      - HELPDESK_AGENT_URL=http://helpdesk-agent:8080
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
+      - WHATSAPP_RATE_LIMIT_PER_MINUTE=${WHATSAPP_RATE_LIMIT_PER_MINUTE:-10}
+    depends_on:
+      helpdesk-agent:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 500M
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
 
-# ═══════════════════════════════════════════════════
-# Health Monitor
-# ═══════════════════════════════════════════════════
-health-monitor:
-  build:
-    context: .
-    dockerfile: Dockerfile
-  container_name: helpdesk-health
-  volumes:
-    - ./scripts:/app/scripts:ro
-    - ./config:/app/config:ro
-  environment:
-    - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
-  depends_on:
-    redis:
-      condition: service_healthy
-  deploy:
-    resources:
-      limits:
-        memory: 200M
-  restart: unless-stopped
-  networks:
-    - helpdesk-net
+  # ═══════════════════════════════════════════════════
+  # Health Monitor
+  # ═══════════════════════════════════════════════════
+  health-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: helpdesk-health
+    volumes:
+      - ./scripts:/app/scripts:ro
+      - ./config:/app/config:ro
+    environment:
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
 
-# ═══════════════════════════════════════════════════
-# Tools UI (Widget + Admin Panel)
-# ═══════════════════════════════════════════════════
-tools-ui:
-  build:
-    context: tools-ui
-    dockerfile: Dockerfile
-  container_name: helpdesk-tools-ui
-  ports:
-    - "127.0.0.1:8484:8484"
-  depends_on:
-    - helpdesk-agent
-    - admin-agent
-  deploy:
-    resources:
-      limits:
-        memory: 200M
-  restart: unless-stopped
-  networks:
-    - helpdesk-net
+  # ═══════════════════════════════════════════════════
+  # Tools UI (Widget + Admin Panel)
+  # ═══════════════════════════════════════════════════
+  tools-ui:
+    build:
+      context: tools-ui
+      dockerfile: Dockerfile
+    container_name: helpdesk-tools-ui
+    ports:
+      - "127.0.0.1:8484:8484"
+    depends_on:
+      - helpdesk-agent
+      - admin-agent
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    networks:
+      - helpdesk-net
 
 # ═══════════════════════════════════════════════════
 # Networks

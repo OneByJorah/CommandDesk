@@ -1,6 +1,11 @@
-# J1 Helpdesk Agent
+# CommandDesk
 
 **Self-hosted AI helpdesk with multi-platform ticketing, WhatsApp chat, email-to-ticket, knowledge base, Freshdesk MCP, and a plug-in agent architecture.**
+
+[![CI](https://github.com/JorahOne-Services/CommandDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/JorahOne-Services/CommandDesk/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/JorahOne-Services/CommandDesk/actions/workflows/security-scan.yml/badge.svg)](https://github.com/JorahOne-Services/CommandDesk/actions/workflows/security-scan.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-311/)
 
 100% local and free. Compatible with Hermes Agent and the broader agent-skills ecosystem.
 
@@ -90,27 +95,33 @@ When a customer requests a human:
 - Freshdesk web portal
 - WhatsApp (collected details → adapter)
 
-## Quick Start
+## Getting Started
+
+**Prerequisites:** Docker Engine 24+ and Docker Compose v2+ must be installed and running.
 
 ```bash
-# 1. Clone
+# 1. Verify Docker is active (required)
+docker info >/dev/null 2>&1 || echo "Docker daemon is not running"
+docker compose version
+
+# 2. Clone the repository
 git clone https://github.com/OneByJorah/CommandDesk.git
 cd CommandDesk
 
-# 2. Run setup
+# 3. Run setup
 ./scripts/setup.sh
 
-# 3. Configure
+# 4. Configure
 cp .env.example .env
 # Edit .env with your IMAP credentials and ticket platform settings
 
-# 4. Start
+# 5. Start
 docker compose up -d
 
-# 5. Index knowledge base
+# 6. Index knowledge base
 docker compose exec helpdesk-agent python3 scripts/index_kb.py
 
-# 6. Open
+# 7. Open
 # Dashboard: http://localhost/dashboard/
 # Helpdesk API: http://localhost/helpdesk/health
 # Admin API: http://localhost/admin/health
@@ -262,11 +273,30 @@ make test-api       # Test agent API
 CommandDesk/
 ├── docker-compose.yml          # Full stack definition
 ├── Dockerfile                  # Main agent container
+├── Dockerfile.email            # Email fetcher container
 ├── Dockerfile.whatsapp         # WhatsApp webhook container
 ├── Makefile                    # Common commands
 ├── requirements.txt            # Python dependencies
 ├── .env.example                # Environment template
-├── .github/workflows/ci.yml    # CI pipeline
+├── .gitignore                  # Git ignore rules
+├── SECURITY.md                 # Security policy
+├── CONTRIBUTING.md             # Contribution guide
+├── setup.cfg                   # Test configuration
+├── .github/
+│   ├── dependabot.yml          # Dependency updates
+│   └── workflows/
+│       ├── ci.yml              # CI pipeline
+│       └── security-scan.yml   # Security scanning
+├── docs/
+│   ├── runbook.md              # Operations runbook
+│   ├── api.md                  # API documentation
+│   └── configuration.md        # Configuration guide
+├── tests/
+│   ├── test_rate_limiter.py    # Rate limiter tests
+│   ├── test_email_fetcher.py   # Email fetcher tests
+│   ├── test_analytics.py       # Analytics tests
+│   ├── test_index_kb.py        # KB indexer tests
+│   └── test_health_monitor.py  # Health monitor tests
 ├── config/
 │   ├── hermes-config.yaml      # Helpdesk agent config
 │   ├── admin-agent-config.yaml # Admin agent config
@@ -291,6 +321,7 @@ CommandDesk/
 │   ├── email_fetcher.py        # IMAP polling
 │   ├── index_kb.py             # Knowledge base indexer
 │   ├── init-db.sql             # Database schema
+│   ├── analytics.py            # Analytics reports
 │   └── setup.sh                # Setup script
 ├── admin/
 │   └── admin-dashboard.html    # Monitoring dashboard
@@ -300,6 +331,14 @@ CommandDesk/
 ├── knowledge-base/             # Place .md/.txt files here
 └── workflows/                  # n8n workflow JSONs
 ```
+
+## Documentation
+
+- [API Documentation](docs/api.md)
+- [Configuration Guide](docs/configuration.md)
+- [Operations Runbook](docs/runbook.md)
+- [Security Policy](SECURITY.md)
+- [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
