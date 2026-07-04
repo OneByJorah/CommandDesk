@@ -4,20 +4,16 @@ Main entry point for the helpdesk agent API.
 """
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 import os
 import time
-from typing import Optional
 
 import httpx
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-
-from rate_limiter import RateLimiter, RateLimitConfig
+from rate_limiter import RateLimitConfig, RateLimiter
 from session_manager import SessionManager
 
 # ═══════════════════════════════════════════════════
@@ -69,9 +65,9 @@ app.add_middleware(
 )
 
 # Global clients
-redis_client: Optional[redis.Redis] = None
-rate_limiter: Optional[RateLimiter] = None
-session_manager: Optional[SessionManager] = None
+redis_client: redis.Redis | None = None
+rate_limiter: RateLimiter | None = None
+session_manager: SessionManager | None = None
 
 
 @app.on_event("startup")
@@ -94,7 +90,7 @@ async def shutdown():
 # ═══════════════════════════════════════════════════
 
 class ChatRequest(BaseModel):
-    session_id: Optional[str] = None
+    session_id: str | None = None
     user_id: str
     message: str = Field(..., max_length=4000)
     platform: str = "web"

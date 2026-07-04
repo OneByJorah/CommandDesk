@@ -4,8 +4,7 @@ Zammad adapter for Hermes helpdesk agent.
 
 from __future__ import annotations
 
-import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .base import Ticket
 from .registry import register
@@ -13,7 +12,7 @@ from .registry import register
 
 @register("zammad")
 class ZammadAdapter(Ticket):
-    def __init__(self, *, base_url: str, api_token: str, group_id: Optional[int] = None, priority_id: int = 2, state_id: int = 1):
+    def __init__(self, *, base_url: str, api_token: str, group_id: int | None = None, priority_id: int = 2, state_id: int = 1):
         self.base_url = base_url.rstrip("/")
         self.api_token = api_token
         self.group_id = group_id
@@ -44,7 +43,7 @@ class ZammadAdapter(Ticket):
         return {"ticket_id": str(data.get("id")), "number": data.get("number"), "status": data.get("state", {}).get("name"), "subject": subject, "platform": "zammad"}
 
     def update_ticket(self, ticket_id, status=None, note=None, **kwargs):
-        payload: Dict[str, Any] = {}
+        payload: dict[str, Any] = {}
         if status:
             payload["state"] = status
         if note:
@@ -67,7 +66,7 @@ class ZammadAdapter(Ticket):
         return [{"ticket_id": str(t.get("id")), "number": t.get("number"), "subject": t.get("title"), "status": (t.get("state") or {}).get("name") if isinstance(t.get("state"), dict) else t.get("state")} for t in tickets]
 
     def close_ticket(self, ticket_id, reason=None, **kwargs):
-        payload: Dict[str, Any] = {"state": "closed"}
+        payload: dict[str, Any] = {"state": "closed"}
         if reason:
             payload["article"] = {"type": "text", "body": reason, "internal": True}
         r = requests.patch(self._url(f"tickets/{ticket_id}"), json=payload, headers=self._headers(), timeout=30)

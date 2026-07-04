@@ -4,10 +4,10 @@ osTicket adapter for Hermes helpdesk agent.
 
 from __future__ import annotations
 
-import os
 import re
+from typing import Any
+
 import requests
-from typing import Any, Dict, List, Optional
 
 from .base import Ticket
 from .registry import register
@@ -61,7 +61,7 @@ class osTicketAdapter(Ticket):
         return {"ticket_id": str(ticket.get("ticket_id") or data.get("id", "")), "number": ticket.get("number"), "status": ticket.get("status"), "subject": subject, "platform": "osticket"}
 
     def update_ticket(self, ticket_id, status=None, note=None, **kwargs):
-        payload: Dict[str, Any] = {}
+        payload: dict[str, Any] = {}
         if status:
             payload["status"] = status
         if note:
@@ -80,7 +80,7 @@ class osTicketAdapter(Ticket):
         return [{"ticket_id": str(t.get("ticket_id") or t.get("id")), "number": t.get("number"), "subject": t.get("subject"), "status": t.get("status")} for t in tickets]
 
     def close_ticket(self, ticket_id, reason=None, **kwargs):
-        payload: Dict[str, Any] = {"status": "closed"}
+        payload: dict[str, Any] = {"status": "closed"}
         if reason:
             payload["post"] = self._sanitize(reason)
             payload["post_status"] = "closed"

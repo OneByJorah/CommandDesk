@@ -7,8 +7,6 @@ from __future__ import annotations
 import json
 import logging
 import time
-from typing import Optional
-from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +47,12 @@ class SessionManager:
                 await conn.execute(
                     """INSERT INTO sessions (id, user_id, platform, message_count, started_at, expires_at, active, ip_address)
                        VALUES ($1, $2, $3, $4, NOW(), NOW() + INTERVAL '{} seconds', TRUE, $5::inet)""".format(self.max_duration),
-                    session_id, user_id, platform, 0, ip
+                    session_id, user_id, platform, 0, ip,
                 )
 
         return session_data
 
-    async def get_session(self, session_id: str) -> Optional[dict]:
+    async def get_session(self, session_id: str) -> dict | None:
         """Get session data."""
         key = f"session:{session_id}"
         data = await self.redis.get(key)
@@ -86,7 +84,7 @@ class SessionManager:
             async with self.pg_pool.acquire() as conn:
                 await conn.execute(
                     "UPDATE sessions SET active = FALSE WHERE id = $1",
-                    session_id
+                    session_id,
                 )
 
     async def get_active_count(self) -> int:

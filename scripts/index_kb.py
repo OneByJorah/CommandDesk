@@ -6,16 +6,18 @@ Loads documents from knowledge-base/ into ChromaDB.
 from __future__ import annotations
 
 import hashlib
-import json
+import logging
 import os
 import sys
 from pathlib import Path
+
+logger = logging.getLogger("index-kb")
 
 try:
     import chromadb
     from chromadb.utils import embedding_functions
 except ImportError:
-    print("ERROR: chromadb not installed. Run: pip install chromadb")
+    logger.error("chromadb not installed. Run: pip install chromadb")
     sys.exit(1)
 
 CHROMA_URL = os.getenv("CHROMA_URL", "http://chroma:8000")
@@ -39,11 +41,12 @@ def compute_hash(content: str) -> str:
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     client = chromadb.HttpClient(url=CHROMA_URL)
 
     # Get or create collection
     embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
+        model_name="all-MiniLM-L6-v2",
     )
 
     try:
@@ -60,11 +63,11 @@ def main():
 
     kb_path = Path(KB_DIR)
     if not kb_path.exists():
-        print(f"ERROR: Knowledge base directory not found: {KB_DIR}")
+        logger.error("Knowledge base directory not found: %s", KB_DIR)
         sys.exit(1)
 
     files = list(kb_path.glob("*.md")) + list(kb_path.glob("*.txt"))
-    print(f"Found {len(files)} knowledge base files")
+    logger.info("Found %d knowledge base files", len(files))
 
     total_chunks = 0
     for file_path in files:
@@ -81,7 +84,7 @@ def main():
             # Check if content changed
             for meta in existing.get("metadatas", []):
                 if meta and meta.get("hash") == content_hash:
-                    print(f"  [skip] {file_path.name} (unchanged)")
+                    logger.info("  [skip] %s (unchanged)", file_path.name)
                     break
             else:
                 # Content changed, re-index
@@ -111,11 +114,11 @@ def main():
             metadatas=metadatas,
         )
         total_chunks += len(chunks)
-        print(f"  [indexed] {file_path.name}: {len(chunks)} chunks")
+        logger.info("  [indexed] %s: %d chunks", file_path.name, len(chunks))
 
     # Get final count
     count = collection.count()
-    print(f"\nDone! Indexed {total_chunks} new chunks. Total in collection: {count}")
+    logger.info("\nDone! Indexed %d new chunks. Total in collection: %d", total_chunks, count)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ Every adapter must implement create_ticket, update_ticket, search_tickets, close
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class Ticket(ABC):
@@ -17,23 +17,23 @@ class Ticket(ABC):
         subject: str,
         body: str,
         *,
-        name: Optional[str] = None,
-        email: Optional[str] = None,
-        dept_id: Optional[int] = None,
-        priority: Optional[str] = None,
-        source: Optional[str] = None,
+        name: str | None = None,
+        email: str | None = None,
+        dept_id: int | None = None,
+        priority: str | None = None,
+        source: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
     def update_ticket(
         self,
         ticket_id: str,
-        status: Optional[str] = None,
-        note: Optional[str] = None,
+        status: str | None = None,
+        note: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -43,14 +43,14 @@ class Ticket(ABC):
         query: str,
         limit: int = 10,
         **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         raise NotImplementedError
 
     @abstractmethod
     def close_ticket(
         self,
         ticket_id: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         raise NotImplementedError

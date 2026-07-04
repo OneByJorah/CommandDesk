@@ -6,11 +6,10 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any, Dict, List, Optional
-
-import urllib.request
 import urllib.error
 import urllib.parse
+import urllib.request
+from typing import Any
 
 from .base import Ticket
 from .registry import register
@@ -24,7 +23,7 @@ class FreshdeskAdapter(Ticket):
     API key is base64 encoded as 'API_KEY:X' for Basic Auth.
     """
 
-    def __init__(self, *, base_url: str, api_key: str, domain: Optional[str] = None):
+    def __init__(self, *, base_url: str, api_key: str, domain: str | None = None):
         """
         Args:
             base_url: Freshdesk URL, e.g. https://yourcompany.freshdesk.com
@@ -43,7 +42,7 @@ class FreshdeskAdapter(Ticket):
         token = base64.b64encode(f"{self.api_key}:X".encode()).decode()
         return f"Basic {token}"
 
-    def _request(self, path: str, *, method: str = "GET", data: Optional[Dict] = None) -> Dict[str, Any]:
+    def _request(self, path: str, *, method: str = "GET", data: dict | None = None) -> dict[str, Any]:
         """Make an authenticated request to Freshdesk API."""
         url = f"{self.api_url}{path}"
         headers = {
@@ -65,15 +64,15 @@ class FreshdeskAdapter(Ticket):
         subject: str,
         body: str,
         *,
-        name: Optional[str] = None,
-        email: Optional[str] = None,
-        dept_id: Optional[int] = None,
-        priority: Optional[str] = None,
-        source: Optional[str] = None,
+        name: str | None = None,
+        email: str | None = None,
+        dept_id: int | None = None,
+        priority: str | None = None,
+        source: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new ticket in Freshdesk."""
-        data: Dict[str, Any] = {
+        data: dict[str, Any] = {
             "subject": subject,
             "description": body,
             "email": email or user_id,
@@ -98,12 +97,12 @@ class FreshdeskAdapter(Ticket):
     def update_ticket(
         self,
         ticket_id: str,
-        status: Optional[str] = None,
-        note: Optional[str] = None,
+        status: str | None = None,
+        note: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Update ticket: add note, change status."""
-        data: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
         # Map status: open=2, pending=3, resolved=4, closed=5
         status_map = {"open": 2, "pending": 3, "resolved": 4, "closed": 5}
         if status:
@@ -126,7 +125,7 @@ class FreshdeskAdapter(Ticket):
         query: str,
         limit: int = 10,
         **kwargs: Any,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Search tickets by user email."""
         # Freshdesk search API
         search_query = f"email:'{user_id}'"
@@ -152,11 +151,11 @@ class FreshdeskAdapter(Ticket):
     def close_ticket(
         self,
         ticket_id: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Close a ticket (status=5)."""
-        data: Dict[str, Any] = {"status": 5}
+        data: dict[str, Any] = {"status": 5}
         if reason:
             self._request(f"/tickets/{ticket_id}/notes", method="POST", data={
                 "body": f"Closed: {reason}",
