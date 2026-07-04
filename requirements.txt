@@ -20,4 +20,4 @@ imaplib2==3.6
 
 # Utilities
 python-dotenv==1.2.2
-uuid6==2024.7.10
+uuid6==2025.0.1
