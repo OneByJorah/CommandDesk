@@ -13,7 +13,7 @@ python-multipart==0.0.31
 openai==1.59.0
 
 # Knowledge base
-chromadb==0.5.23
+chromadb==1.5.9
 
 # Email processing
 imaplib2==3.6
