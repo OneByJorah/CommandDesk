@@ -10,7 +10,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Validate docker-compose
         run: |
@@ -30,7 +30,7 @@ jobs:
   test-configs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check YAML syntax
         run: |
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test-configs]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build containers
         run: |
