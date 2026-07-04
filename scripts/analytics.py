@@ -10,8 +10,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 
 import asyncpg
 

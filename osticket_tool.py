@@ -6,8 +6,8 @@ Assumes an API-enabled agent account exists in osTicket.
 
 import os
 import re
+
 import requests
-from typing import Optional
 
 OSTICKET_BASE_URL = os.environ.get("OSTICKET_BASE_URL", "").rstrip("/")
 OSTICKET_API_KEY = os.environ.get("OSTICKET_API_KEY", "")
@@ -48,11 +48,11 @@ def create_ticket(
     subject: str,
     body: str,
     *,
-    name: Optional[str] = None,
-    email: Optional[str] = None,
-    dept_id: Optional[int] = None,
-    priority: Optional[str] = None,
-    source: Optional[str] = None,
+    name: str | None = None,
+    email: str | None = None,
+    dept_id: int | None = None,
+    priority: str | None = None,
+    source: str | None = None,
 ) -> dict:
     """
     Create a ticket in osTicket.
@@ -93,7 +93,7 @@ def create_ticket(
     }
 
 
-def update_ticket(ticket_id: str, status: Optional[str] = None, note: Optional[str] = None) -> dict:
+def update_ticket(ticket_id: str, status: str | None = None, note: str | None = None) -> dict:
     _require_config()
     payload = {}
     if status:
@@ -131,7 +131,7 @@ def search_tickets(user_id: str, query: str, limit: int = 10) -> list[dict]:
     return out
 
 
-def close_ticket(ticket_id: str, reason: Optional[str] = None) -> dict:
+def close_ticket(ticket_id: str, reason: str | None = None) -> dict:
     _require_config()
     payload = {"status": "closed"}
     if reason:

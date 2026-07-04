@@ -10,7 +10,6 @@ import json
 import logging
 import os
 import time
-from typing import Optional
 
 import httpx
 import redis.asyncio as redis
@@ -31,7 +30,7 @@ SERVICES = {
 }
 
 
-async def check_service(name: str, url: Optional[str]) -> dict:
+async def check_service(name: str, url: str | None) -> dict:
     """Check a single service health."""
     if not url:
         return {"name": name, "status": "unknown", "latency_ms": 0}

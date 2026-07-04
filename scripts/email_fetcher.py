@@ -7,13 +7,11 @@ from __future__ import annotations
 
 import email
 import imaplib
-import json
 import logging
 import os
 import time
 import uuid
 from email.header import decode_header
-from typing import Optional
 
 import httpx
 
@@ -68,7 +66,7 @@ def extract_email_body(msg) -> str:
     return body[:10000]  # Limit to 10KB
 
 
-def process_email(mail: imaplib.IMAP4_SSL, num: str) -> Optional[dict]:
+def process_email(mail: imaplib.IMAP4_SSL, num: str) -> dict | None:
     """Process a single email and create ticket."""
     try:
         status, data = mail.fetch(num, "(RFC822)")

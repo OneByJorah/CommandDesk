@@ -3,10 +3,10 @@ Hermes memory setup for self-hosted llama.cpp.
 Assumes llama-server is running on 127.0.0.1:8080 with --embedding enabled.
 """
 
-import sqlite3
-import requests
 import os
-import time
+import sqlite3
+
+import requests
 
 LLAMA_HOST = os.environ.get("LLAMA_HOST", "http://127.0.0.1:8080")
 EMBED_MODEL = os.environ.get("LLAMA_EMBED_MODEL", "qwen2.5-7b-instruct-q4_k_m")

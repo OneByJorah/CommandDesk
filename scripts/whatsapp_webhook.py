@@ -12,11 +12,10 @@ import json
 import logging
 import os
 import time
-from typing import Optional
 
 import httpx
 import redis.asyncio as redis
-from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -42,29 +41,29 @@ INTENT_PATTERNS = {
     "check_tickets": [
         "my ticket", "my tickets", "ticket status", "check ticket", "track ticket",
         "where is my ticket", "ticket #", "status of", "view tickets", "see tickets",
-        "list tickets", "my issue", "my problem", "ticket progress"
+        "list tickets", "my issue", "my problem", "ticket progress",
     ],
     "talk_to_human": [
         "human", "agent", "person", "real person", "talk to someone",
         "speak to", "representative", "operator", "escalate", "manager",
         "don't want bot", "not helpful", "live chat", "live agent",
         "wait for someone", "can I talk", "I want help", "help please",
-        "I need help", "urgent", "asap", "emergency"
+        "I need help", "urgent", "asap", "emergency",
     ],
     "create_ticket": [
         "create ticket", "new ticket", "open ticket", "report issue",
         "file complaint", "submit issue", "new problem", "new issue",
         "start ticket", "help with", "problem with", "issue with",
-        "something broken", "not working", "broken", "bug", "error"
+        "something broken", "not working", "broken", "bug", "error",
     ],
     "greeting": [
         "hi", "hello", "hey", "good morning", "good afternoon",
-        "good evening", "howdy", "yo", "sup"
+        "good evening", "howdy", "yo", "sup",
     ],
     "thanks": [
         "thanks", "thank you", "thx", "appreciate", "great", "awesome",
-        "perfect", "ok", "okay", "cool"
-    ]
+        "perfect", "ok", "okay", "cool",
+    ],
 }
 
 # ═══════════════════════════════════════════════════
@@ -152,7 +151,7 @@ RESPONSES = {
         "2️⃣ Create a new ticket\n"
         "3️⃣ Talk to a human\n\n"
         "Or just describe your issue and I'll do my best to help!"
-    )
+    ),
 }
 
 # ═══════════════════════════════════════════════════
@@ -160,7 +159,7 @@ RESPONSES = {
 # ═══════════════════════════════════════════════════
 
 app = FastAPI(title="WhatsApp Helpdesk Webhook", version="1.0.0")
-redis_client: Optional[redis.Redis] = None
+redis_client: redis.Redis | None = None
 
 
 @app.on_event("startup")
@@ -203,7 +202,7 @@ def detect_intent(message: str, session_data: dict) -> str:
     if session_data.get("awaiting") == "email":
         # Try to extract email from message
         import re
-        email_match = re.search(r'[\w.+-]+@[\w-]+\.[\w.-]+', text)
+        email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", text)
         if email_match:
             return "email_provided"
         return "ask_email"
@@ -329,9 +328,9 @@ async def send_whatsapp_buttons(phone_number: str, body: str, buttons: list):
                 "buttons": [
                     {"type": "reply", "reply": {"id": btn[0], "title": btn[1]}}
                     for btn in buttons
-                ]
-            }
-        }
+                ],
+            },
+        },
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
@@ -361,7 +360,7 @@ async def add_to_human_queue(phone_number: str, session: dict):
             f"🔔 *Human Support Request*\n\n"
             f"📱 Customer: {phone_number}\n"
             f"⏰ Waiting since: Just now\n\n"
-            f"Reply to take over this conversation."
+            f"Reply to take over this conversation.",
         )
     logger.info(f"Added {phone_number} to human queue, notified admin")
 
@@ -403,7 +402,7 @@ async def receive_message(request: Request):
     if signature and WHATSAPP_WEBHOOK_SECRET != "change_me":
         body = await request.body()
         expected = "sha256=" + hmac.new(
-            WHATSAPP_WEBHOOK_SECRET.encode(), body, hashlib.sha256
+            WHATSAPP_WEBHOOK_SECRET.encode(), body, hashlib.sha256,
         ).hexdigest()
         if not hmac.compare_digest(expected, signature):
             raise HTTPException(status_code=403, detail="Invalid signature")
@@ -479,7 +478,7 @@ async def route_intent(intent: str, phone: str, text: str, session: dict) -> str
 
     if intent == "email_provided":
         import re
-        email_match = re.search(r'[\w.+-]+@[\w-]+\.[\w.-]+', text)
+        email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", text)
         if email_match:
             email = email_match.group()
             session["user_id"] = email
@@ -498,7 +497,7 @@ async def route_intent(intent: str, phone: str, text: str, session: dict) -> str
         result = await forward_to_agent(
             user_id=session.get("user_id", phone),
             message=text,
-            platform="whatsapp"
+            platform="whatsapp",
         )
         if result.get("ticket_id"):
             return RESPONSES["ticket_created"].format(**result)
@@ -518,7 +517,7 @@ async def route_intent(intent: str, phone: str, text: str, session: dict) -> str
     result = await forward_to_agent(
         user_id=session.get("user_id", phone),
         message=text,
-        platform="whatsapp"
+        platform="whatsapp",
     )
     return result.get("response", RESPONSES["fallback"])
 
@@ -532,8 +531,8 @@ async def search_tickets(email: str) -> list:
                 json={
                     "user_id": email,
                     "message": f"Search my tickets for: {email}",
-                    "platform": "whatsapp"
-                }
+                    "platform": "whatsapp",
+                },
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -553,8 +552,8 @@ async def forward_to_agent(user_id: str, message: str, platform: str) -> dict:
                 json={
                     "user_id": user_id,
                     "message": message,
-                    "platform": platform
-                }
+                    "platform": platform,
+                },
             )
             if resp.status_code == 200:
                 return resp.json()
@@ -635,6 +634,6 @@ async def view_queue():
         queue.append({
             "phone": data["phone"],
             "waiting_minutes": wait_minutes,
-            "message": data.get("message", "")[:100]
+            "message": data.get("message", "")[:100],
         })
     return {"queue": queue, "total": len(queue)}

@@ -4,14 +4,7 @@ Email-to-ticket adapter for Hermes helpdesk agent.
 
 from __future__ import annotations
 
-import email as imap_email
-import email.header
-import imaplib
-import re
-from typing import Any, Dict, List, Optional
-
 from .base import Ticket
-from .registry import get as get_platform
 
 
 class EmailTicketAdapter:
@@ -28,4 +21,4 @@ class EmailTicketAdapter:
         self.mailbox = mailbox
         self.mark_seen = mark_seen
         self.ticket_platform_name = ticket_platform
-        self._ticket_platform: Optional[Ticket] = None
+        self._ticket_platform: Ticket | None = None
