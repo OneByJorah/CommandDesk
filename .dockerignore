@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Secrets
+.env
+.env.*
+.secrets/
+certs/
+*.pem
+*.key
+
+# Models
+models/
+*.gguf
+
+# Data
+data/
+knowledge-base/
+email-queue/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# CI
+.github/
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Node (for tools-ui)
+node_modules/
+
+# Documentation
+README.md
+CONTRIBUTING.md
+SECURITY.md
+CODE_OF_CONDUCT.md
+AUDIT_REPORT.md

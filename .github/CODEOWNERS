@@ -1,0 +1,12 @@
+# Default owners for all files
+* @OneByJorah
+
+# Security-sensitive files
+SECURITY.md @OneByJorah
+config/ @OneByJorah
+docker-compose*.yml @OneByJorah
+Dockerfile* @OneByJorah
+
+# CI/CD
+.github/workflows/ @OneByJorah
+.github/dependabot.yml @OneByJorah

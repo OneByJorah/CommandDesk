@@ -11,6 +11,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import time
 
 import httpx
@@ -26,7 +27,7 @@ logger = logging.getLogger("whatsapp-webhook")
 # ═══════════════════════════════════════════════════
 
 HELPDESK_AGENT_URL = os.getenv("HELPDESK_AGENT_URL", "http://helpdesk-agent:8080")
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:***@postgres:5432/helpdesk")
+REDIS_URL = os.getenv("REDIS_URL", "redis://:redis_pass@redis:6379/0")
 WHATSAPP_WEBHOOK_SECRET = os.getenv("WHATSAPP_WEBHOOK_SECRET", "change_me")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
@@ -201,7 +202,6 @@ def detect_intent(message: str, session_data: dict) -> str:
     # Check if we're waiting for a specific response
     if session_data.get("awaiting") == "email":
         # Try to extract email from message
-        import re
         email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", text)
         if email_match:
             return "email_provided"
@@ -477,7 +477,6 @@ async def route_intent(intent: str, phone: str, text: str, session: dict) -> str
             return RESPONSES["human_queue"]
 
     if intent == "email_provided":
-        import re
         email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", text)
         if email_match:
             email = email_match.group()

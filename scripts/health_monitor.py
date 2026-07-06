@@ -17,7 +17,7 @@ import redis.asyncio as redis
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("health-monitor")
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:***@postgres:5432/helpdesk")
+REDIS_URL = os.getenv("REDIS_URL", "redis://:redis_pass@redis:6379/0")
 
 SERVICES = {
     "llama": "http://llama:8081/health",
@@ -74,16 +74,20 @@ async def collect_metrics(redis_client: redis.Redis) -> dict:
         redis_memory = "unknown"
         redis_keys = 0
 
-    # Active sessions
+    # Active sessions (using SCAN to avoid O(N) KEYS)
     try:
-        session_keys = await redis_client.keys("session:*")
         active_sessions = 0
-        for key in session_keys:
-            data = await redis_client.get(key)
-            if data:
-                session = json.loads(data)
-                if session.get("active"):
-                    active_sessions += 1
+        cursor = 0
+        while True:
+            cursor, session_keys = await redis_client.scan(cursor, match="session:*", count=1000)
+            for key in session_keys:
+                data = await redis_client.get(key)
+                if data:
+                    session = json.loads(data)
+                    if session.get("active"):
+                        active_sessions += 1
+            if cursor == 0:
+                break
     except Exception:
         active_sessions = 0
 
