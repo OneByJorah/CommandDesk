@@ -1,0 +1,50 @@
+# Git
+.git/
+.gitignore
+
+# Secrets
+.env
+.env.example
+.secrets/
+certs/
+*.pem
+*.key
+
+# Models
+models/
+*.gguf
+
+# Data
+data/
+knowledge-base/
+email-queue/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Reports
+reports/
+
+# Not needed for build
+.github/
+compose/
+admin/
+skills/
+tools-ui/
+workflows/
+*.md
+Makefile
+docker-compose*.yml
+j1.yaml
+helpdesk-agent-diagram-guide.html
+dashboard-mockup.png
+dashboard-realistic.png
