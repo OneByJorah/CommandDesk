@@ -1,133 +1,72 @@
+<!-- j1-brand:v2 -->
 <div align="center">
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white">
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white">
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
-  <img src="https://img.shields.io/badge/AI-FF6F00?style=for-the-badge&logo=openai&logoColor=white">
-  <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge">
-</div>
 
-<br>
+# CommandDesk
 
-<div align="center">
-  <h1>🎫 CommandDesk</h1>
-  <p><strong>Self-Hosted AI Helpdesk Agent</strong></p>
-  <p>100% local, AI-powered helpdesk with multi-platform ticketing, knowledge base, and multi-channel communication</p>
-  <p>
-    <a href="#-features">Features</a> •
-    <a href="#-quick-start">Quick Start</a> •
-    <a href="#-architecture">Architecture</a> •
-    <a href="#-integrations">Integrations</a>
-  </p>
+A self-hosted, 100% local AI helpdesk agent — multi-platform ticketing, email-to-ticket ingestion, admin dashboard with live cost tracking.
+
+[![GitHub](https://img.shields.io/badge/github-OneByJorah%2FCommandDesk-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://github.com/OneByJorah/CommandDesk)
+[![License](https://img.shields.io/badge/license-MIT-FFB300?style=for-the-badge&labelColor=0d0d0c)](LICENSE)
+[![Language](https://img.shields.io/badge/Python-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://python.org)
+[![Built by](https://img.shields.io/badge/built%20by-JorahOne%20LLC-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://github.com/OneByJorah)
+
 </div>
 
 ---
 
-## ✨ Features
+## Why This Exists
 
-- **AI-Powered Ticketing** — Auto-respond, triage, and resolve tickets via local LLMs
-- **Multi-Platform Support** — osTicket, Freshdesk, Zammad adapters
-- **Multi-Channel** — WhatsApp, Email (IMAP), and web interface
-- **Knowledge Base** — ChromaDB semantic search for instant answers
-- **Admin Dashboard** — Analytics, human takeover, and management
-- **Security** — Rate limiting, content filtering, PII detection
-- **Workflow Automation** — n8n integration for complex automation
-- **Plug-in Architecture** — Extend with custom adapters and tools
+Managed helpdesks nickel-and-dime you per agent, per ticket, per integration. CommandDesk is a fully local alternative that runs LLMs (Ollama, llama.cpp, or OpenAI-compatible), connects to osTicket, Freshdesk, and Zammad, ingests email via IMAP, and gives you an admin dashboard with real-time cost tracking — all behind `docker compose up`.
 
-## 🚀 Quick Start
+## Key Features
+
+| Feature | Why It Matters |
+|---|---|
+| AI-powered auto-response & triage | Local LLMs resolve tickets without sending data to third parties |
+| Multi-platform ticketing | osTicket, Freshdesk, and Zammad support in one deploy |
+| Email-to-ticket (IMAP) | Converts inbound email into tickets automatically |
+| WhatsApp integration | Lets users file and track tickets via WhatsApp |
+| Vector knowledge base (ChromaDB) | Semantic search across your documentation for accurate answers |
+| n8n workflow integration | Chain helpdesk events into automations |
+| PII detection & rate limiting | Built-in safety layers before responses reach customers |
+
+## Quick Start
 
 ```bash
 git clone https://github.com/OneByJorah/CommandDesk.git
 cd CommandDesk
-cp .env.example .env
-# Edit .env with your configuration
+cp .env.example .env   # configure your LLM backend, ticketing platform, etc.
 docker compose up -d
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                     CommandDesk                          │
-│                                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐ │
-│  │   Ticket    │  │    AI       │  │   Knowledge      │ │
-│  │  Platforms  │  │   Engine    │  │     Base         │ │
-│  │  osTicket   │  │   Ollama    │  │   ChromaDB       │ │
-│  │  Freshdesk  │  │   llama.cpp │  │   Qdrant         │ │
-│  │  Zammad     │  │   OpenAI    │  │                  │ │
-│  └──────┬──────┘  └──────┬──────┘  └────────┬─────────┘ │
-│         │                │                   │           │
-│         └────────────────┼───────────────────┘           │
-│                          ▼                               │
-│              ┌──────────────────────┐                     │
-│              │  Communication Layer │                     │
-│              │  WhatsApp · Email ·  │                     │
-│              │  Web Interface       │                     │
-│              └──────────────────────┘                     │
-└──────────────────────────────────────────────────────────┘
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Ticketing    │◀───▶│  CommandDesk  │────▶│  AI Engine    │
+│  osTicket     │     │  FastAPI      │     │  Ollama /     │
+│  Freshdesk    │     │  Admin UI     │     │  llama.cpp    │
+│  Zammad       │     │  Web UI       │     │  OpenAI API   │
+└──────────────┘     └──────┬───────┘     └──────────────┘
+                            │
+                     ┌──────▼───────┐
+                     │  ChromaDB     │
+                     │  (vector KB)  │
+                     └──────────────┘
 ```
 
-## 📡 Integrations
+## Documentation
 
-| Platform | Type | Description |
-|----------|------|-------------|
-| **osTicket** | Ticketing | Open-source ticket system adapter |
-| **Freshdesk** | Ticketing | Cloud-based ticketing |
-| **Zammad** | Ticketing | Open-source support system |
-| **WhatsApp** | Channel | WhatsApp messaging integration |
-| **Email (IMAP)** | Channel | Email-to-ticket conversion |
-| **ChromaDB** | Knowledge | Vector search for knowledge base |
-| **n8n** | Automation | Workflow automation |
-
-## 🐳 Docker Compose
-
-```bash
-# Start with AI engine
-docker compose up -d
-
-# Start with development config
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-
-# View logs
-docker compose logs -f
-
-# Stop
-docker compose down
-```
-
-## 📁 Project Structure
-
-```
-CommandDesk/
-├── admin/                 # Admin dashboard
-├── compose/               # Docker Compose configs
-├── config/                # Application configuration
-├── scripts/               # Utility scripts
-├── skills/                # AI agent skills
-├── ticket_platforms/      # osTicket, Freshdesk, Zammad adapters
-├── tools-ui/              # Web UI components
-├── Dockerfile             # Backend Docker image
-├── Dockerfile.email       # Email service image
-├── Dockerfile.whatsapp    # WhatsApp service image
-├── docker-compose.yml     # Main deployment
-├── Makefile               # Build automation
-└── requirements.txt       # Python dependencies
-```
-
-## 🔒 Security
-
-- Rate limiting on all API endpoints
-- Content filtering for malicious payloads
-- PII detection and redaction
-- Environment-based configuration (`.env` never committed)
-
-## 📄 License
-
-MIT © Jhonattan L. Jimenez
+| Doc | Description |
+|---|---|
+| [Setup Guide](docs/setup.md) | Configuration and first-run walkthrough |
+| [Platform Integration](docs/platforms.md) | Connecting osTicket, Freshdesk, and Zammad |
+| [AI Configuration](docs/ai.md) | Choosing and tuning your LLM backend |
 
 ---
 
-<div align="center">
-  <p>🤖 AI-powered helpdesk, fully self-hosted</p>
-  <p><a href="https://github.com/OneByJorah">@OneByJorah</a></p>
-</div>
+## License
+
+MIT © JorahOne, LLC — see [LICENSE](LICENSE)
+
+<sub>Part of the JorahOne infrastructure ecosystem.</sub>
