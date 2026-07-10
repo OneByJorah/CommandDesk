@@ -17,7 +17,7 @@ import redis.asyncio as redis
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("health-monitor")
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:***@postgres:5432/helpdesk")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 SERVICES = {
     "llama": "http://llama:8081/health",
