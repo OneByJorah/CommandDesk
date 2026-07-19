@@ -1,18 +1,15 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/OneByJorah/CommandDesk/main/docs/logo.png" alt="CommandDesk Logo" width="120">
-
   # 🎫 CommandDesk
 
   **Self-Hosted AI Helpdesk Agent**
 
-  Multi-platform ticketing, email-to-ticket, admin dashboard with live cost tracking
+  Multi-platform ticketing ingestion, an OpenAI-compatible AI chat agent, and an admin dashboard UI — self-hosted with Docker.
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+  [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
   [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
   [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-  [![AI-Powered](https://img.shields.io/badge/AI-Powered-9B59B6?style=flat&logo=openai&logoColor=white)](https://openai.com/)
 
   [Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [API](#-api-reference) • [Contributing](#-contributing)
 
@@ -22,15 +19,15 @@
 
 ## 📸 Screenshots
 
+> Captured from the running services during this polish pass (real `agent_server` API response + the repo's actual dashboard/widget UIs).
+
 <div align="center">
 
-| Ticket Dashboard | AI Assistant | Cost Tracker |
-|------------------|--------------|--------------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![AI](docs/screenshots/ai-assistant.png) | ![Costs](docs/screenshots/costs.png) |
+| Live API `/health` | Admin Dashboard UI | Chat Widget UI |
+|--------------------|--------------------|----------------|
+| ![API health](docs/screenshots/api-health.png) | ![Admin](docs/screenshots/admin-dashboard.png) | ![Widget](docs/screenshots/chat-widget.png) |
 
 </div>
-
-> 💡 **Tip:** CommandDesk uses AI to automatically categorize, prioritize, and respond to tickets
 
 ---
 
@@ -38,14 +35,15 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🎫 **Multi-Platform Ticketing** | Email, WhatsApp, Telegram, Web |
-| 🤖 **AI Auto-Response** | Intelligent ticket routing and responses |
-| 📧 **Email-to-Ticket** | Automatic ticket creation from emails |
-| 💰 **Cost Tracking** | Real-time AI usage cost monitoring |
-| 📊 **Analytics Dashboard** | Ticket metrics and performance stats |
-| 🔐 **Role-Based Access** | Admin, Agent, User roles |
-| 🐳 **Docker Ready** | One-command deployment |
-| 🔌 **Plugin System** | Extend with custom integrations |
+| 🤖 **AI Chat Agent** | FastAPI service exposing `/chat` — sends messages to an OpenAI-compatible LLM (llama.cpp / OpenAI / etc.) and returns responses |
+| 🛡️ **Rate Limiting** | Per-session request caps, message-length limits, and sliding-window throttling (in-memory, Redis-backed) |
+| 🎫 **Ticket Platform Integrations** | Pluggable connectors for osTicket, Zammad, Freshdesk, and email (IMAP) — see `ticket_platforms/` |
+| 📧 **Email-to-Ticket** | `email_fetcher.py` polls IMAP and creates tickets via the platform API |
+| 💬 **Web Chat Widget** | Static embeddable chat widget (`tools-ui/`) that talks to the agent API |
+| 📊 **Admin Dashboard UI** | Standalone HTML dashboard prototype (`admin/admin-dashboard.html`) for ops/monitoring view |
+| 🐳 **Docker Ready** | Multi-service `docker-compose.yml` (app + admin + llama.cpp + chroma + searxng + postgres + redis + n8n + nginx) |
+
+> ⚠️ **Not yet implemented (described in older docs, not in code):** role-based auth (Admin/Agent/User), a server-rendered dashboard at `:8080`, and live cost tracking. The chat agent degrades gracefully (returns a fallback message) when no LLM endpoint is reachable.
 
 ---
 
@@ -53,220 +51,147 @@
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Git
-- SMTP server for email integration (optional)
+- Docker & Docker Compose **or** Python 3.11+ and Redis
+- An OpenAI-compatible LLM endpoint (llama.cpp, OpenAI, etc.) for real `/chat` replies
 
-### Installation
+### Option A — Docker (full stack)
 
 ```bash
-# Clone the repository
 git clone https://github.com/OneByJorah/CommandDesk.git
 cd CommandDesk
-
-# Start with Docker
+cp .env.example .env          # fill in secrets/paths
+# Place a GGUF model at ./models (e.g. qwen2.5-7b-instruct-q4_k_m.gguf) for the llama.cpp service
 docker compose up -d
 ```
 
-### Access the Dashboard
+This brings up the helpdesk agent on `:8080`, the admin agent on `:8082`, the admin dashboard behind nginx on `:80`, and the supporting services (llama.cpp, chroma, searxng, postgres, redis, n8n).
 
-Open **http://localhost:8080** in your browser
+### Option B — Run the API locally (minimal)
 
-### Default Credentials
+```bash
+git clone https://github.com/OneByJorah/CommandDesk.git
+cd CommandDesk
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+docker run -d --name cd-redis -p 127.0.0.1:6379:6379 redis:7-alpine   # or any Redis
+cd scripts
+REDIS_URL=redis://127.0.0.1:6379/0 AGENT_MODE=helpdesk \
+  python -m uvicorn agent_server:app --host 0.0.0.0 --port 8080
+```
 
-- **Admin:** admin@commanddesk.local / admin
-- **Agent:** agent@commanddesk.local / agent
+The API is verified running: `GET /health` returns `{"status":"ok",...}` and `POST /chat` accepts requests (replying with a fallback message when no LLM is configured).
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CD_PORT` | `8080` | Dashboard port |
-| `DATABASE_URL` | `sqlite:///./commanddesk.db` | Database URL |
-| `SMTP_HOST` | - | SMTP server |
-| `SMTP_PORT` | `587` | SMTP port |
-| `OPENAI_API_KEY` | - | OpenAI API key |
-| `WHATSAPP_TOKEN` | - | WhatsApp Business API |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Redis for rate limiting / sessions |
+| `LLM_API_BASE` | `http://llama:8081/v1` | OpenAI-compatible LLM base URL |
+| `LLM_MODEL` | `qwen2.5-7b-instruct` | Model name for chat completions |
+| `CHROMA_URL` | `http://chroma:8000` | Vector store for knowledge base |
+| `SEARX_URL` | `http://searxng:8080` | Web search backend |
+| `ALLOW_CREATE_TICKET` | `false` | Let the agent open new tickets |
+| `AGENT_MODE` | `helpdesk` | Agent persona mode |
+
+See `.env.example` for the full list (DB, Redis auth, IMAP, ticket-platform keys, JWT, etc.).
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     CommandDesk                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│   ┌──────────┐      ┌──────────┐      ┌──────────────┐    │
-│   │ Browser  │ ───▶ │  Nginx   │ ───▶ │ FastAPI      │    │
-│   └──────────┘      └──────────┘      └──────┬───────┘    │
-│                                               │             │
-│                                   ┌───────────┴──────────┐ │
-│                                   │                      │ │
-│                        ┌──────────┴──────────┐           │ │
-│                        │                     │           │ │
-│                        ▼                     ▼           │ │
-│                 ┌──────────┐          ┌──────────┐      │ │
-│                 │  Ticket  │          │ AI Agent │      │ │
-│                 │  Engine  │          │ Gateway  │      │ │
-│                 └──────────┘          └──────────┘      │ │
-│                                                           │ │
-│  ┌─────────────────────────────────────────────────────┐ │ │
-│  │              Communication Channels                 │ │ │
-│  │  ┌───────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐ │ │ │
-│  │  │ Email │  │WhatsApp │  │Telegram │  │   Web   │ │ │ │
-│  │  │  SMTP │  │  API    │  │   Bot   │  │  Forms  │ │ │ │
-│  │  └───────┘  └─────────┘  └─────────┘  └─────────┘ │ │ │
-│  └─────────────────────────────────────────────────────┘ │
-│                                                           │
-└─────────────────────────────────────────────────────────────┘
+                        ┌─────────────────────────────┐
+   Browser / Widget ──▶ │  agent_server (FastAPI)     │  :8080
+                        │   /health  /chat  /session  │
+                        └───────────┬─────────────────┘
+                                    │
+              ┌─────────┬───────────┼────────────┬──────────────┐
+              ▼         ▼           ▼            ▼              ▼
+          Redis    LLM (OpenAI-   Chroma     SearXNG      Ticket Platforms
+         (rate     compatible,    (KB        (web         (osTicket / Zammad /
+         limit)    llama.cpp)     vector)    search)       Freshdesk / Email)
 ```
 
-### Tech Stack
+- **Backend:** Python 3.11+, FastAPI, uvicorn, Redis (rate limiting & sessions)
+- **LLM:** any OpenAI-compatible `/v1/chat/completions` endpoint (llama.cpp in the compose stack)
+- **UIs:** `admin/admin-dashboard.html` (ops dashboard prototype) and `tools-ui/` (embeddable chat widget) — static front-ends that call the agent API
+- **Deployment:** Docker Compose (10 services) or single-process via `uvicorn`
 
-| Component | Technology |
-|-----------|------------|
-| **Backend** | Python 3.10+, FastAPI, SQLAlchemy |
-| **Frontend** | HTML5, CSS3, JavaScript |
-| **Database** | SQLite / PostgreSQL |
-| **AI/ML** | OpenAI API, LangChain |
-| **Integrations** | SMTP, WhatsApp Business, Telegram |
-| **Deployment** | Docker Compose |
-
----
-
-## 📁 Project Structure
+### Project Structure
 
 ```
 CommandDesk/
-├── backend/                  # FastAPI backend
-│   ├── main.py              # Application entry
-│   ├── routers/             # API routes
-│   │   ├── tickets.py       # Ticket management
-│   │   ├── ai.py            # AI agent endpoints
-│   │   └── analytics.py     # Analytics & costs
-│   ├── services/            # Business logic
-│   │   ├── ticket_engine.py # Ticket processing
-│   │   ├── ai_agent.py      # AI response agent
-│   │   └── channels/        # Communication channels
-│   │       ├── email.py     # Email integration
-│   │       ├── whatsapp.py  # WhatsApp integration
-│   │       └── telegram.py  # Telegram integration
-│   └── models/              # Data models
-├── frontend/                # Dashboard UI
-├── plugins/                 # Plugin system
-├── docs/                    # Documentation
-│   └── screenshots/         # Dashboard screenshots
-├── docker-compose.yml       # Docker deployment
-└── requirements.txt         # Python dependencies
+├── scripts/              # FastAPI agent server + workers
+│   ├── agent_server.py   # main API entry (/health, /chat, /session)
+│   ├── rate_limiter.py   # per-session throttling
+│   ├── session_manager.py
+│   ├── email_fetcher.py  # IMAP -> ticket polling
+│   └── whatsapp_webhook.py
+├── ticket_platforms/     # osTicket, Zammad, Freshdesk, email connectors
+├── admin/                # admin-dashboard.html (static UI)
+├── tools-ui/             # embeddable chat widget (static)
+├── config/               # system prompt, hermes/mcp configs, nginx, searxng
+├── docker-compose.yml    # full stack
+├── Dockerfile            # helpdesk/admin agent image
+└── requirements.txt
 ```
 
 ---
 
 ## 🔌 API Reference
 
-### Tickets
-
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/tickets` | `GET` | List tickets |
-| `/api/tickets` | `POST` | Create ticket |
-| `/api/tickets/<id>` | `GET` | Get ticket details |
-| `/api/tickets/<id>/update` | `PUT` | Update ticket |
-| `/api/tickets/<id>/close` | `POST` | Close ticket |
+| `/health` | `GET` | Liveness/version (`{"status":"ok",...}`) |
+| `/chat` | `POST` | `{user_id, message, session_id?, platform?}` → AI reply (degrades gracefully without LLM) |
+| `/session/{id}` | `GET` | Rate-limit/session info for a session id |
 
-### AI Agent
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/ai/analyze` | `POST` | Analyze ticket with AI |
-| `/api/ai/respond` | `POST` | Generate AI response |
-| `/api/ai/costs` | `GET` | Get AI usage costs |
-
-### Analytics
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/analytics/overview` | `GET` | Dashboard overview |
-| `/api/analytics/tickets` | `GET` | Ticket statistics |
-| `/api/analytics/performance` | `GET` | Agent performance |
-
-### Example Usage
+### Example
 
 ```bash
-# Create a ticket
-curl -X POST http://localhost:8080/api/tickets \
-  -H "Content-Type: application/json" \
-  -d '{"subject": "Login issue", "body": "Cannot login to my account", "source": "email"}'
+# Health
+curl http://localhost:8080/health
 
-# Get AI analysis
-curl -X POST http://localhost:8080/api/ai/analyze \
+# Chat
+curl -X POST http://localhost:8080/chat \
   -H "Content-Type: application/json" \
-  -d '{"ticket_id": 123}'
-
-# Get cost summary
-curl http://localhost:8080/api/ai/costs?period=30d
+  -d '{"user_id":"alice","message":"My password reset email never arrived"}'
 ```
 
 ---
 
-## 🛠️ Development
+## 🧪 Testing
 
-### Local Development
-
-```bash
-# Clone the repository
-git clone https://github.com/OneByJorah/CommandDesk.git
-cd CommandDesk
-
-# Backend setup
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Start development server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Running Tests
+No automated test suite is included yet. A smoke check is the API health endpoint:
 
 ```bash
-pytest
+curl -f http://localhost:8080/health   # exits non-zero if the agent is down
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 ## 🔒 Security
 
-For security concerns, please see [SECURITY.md](SECURITY.md).
-
----
-
-## 💬 Support
-
-- 📧 Email: support@jorah.one
-- 🐛 Issues: [GitHub Issues](https://github.com/OneByJorah/CommandDesk/issues)
-- 📖 Docs: [Documentation](docs/)
+See [SECURITY.md](SECURITY.md). No secrets are committed; configure everything via `.env` (use `.env.example` as a template).
 
 ---
 
 <div align="center">
 
-  **Built with ❤️ by [Jhonattan L. Jimenez](https://github.com/OneByJorah)**
+  **Built by [Jhonattan L. Jimenez](https://github.com/OneByJorah) under JorahOne LLC**
 
-  [⬆ Back to Top](#-commanddesk)
+  More projects: [github.com/OneByJorah](https://github.com/OneByJorah)
 
 </div>

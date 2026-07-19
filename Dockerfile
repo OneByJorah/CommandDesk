@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # App code
 COPY ticket_platforms /app/ticket_platforms
-COPY scripts/*.py /app/scripts/
+COPY scripts/*.py /app/
 COPY config/ /app/config/
 
 # Create data dirs
