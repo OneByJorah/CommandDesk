@@ -9,9 +9,6 @@ psycopg2-binary==2.9.10
 httpx==0.28.1
 python-multipart==0.0.31
 
-# LLM / OpenAI-compatible client
-openai==1.59.0
-
 # Knowledge base
 chromadb==0.5.23
 
