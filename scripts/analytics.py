@@ -14,7 +14,7 @@ from datetime import datetime
 
 import asyncpg
 
-POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://helpdesk:***@postgres:5432/helpdesk")
+POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql://helpdesk:helpdesk@postgres:5432/helpdesk")
 
 
 async def get_token_usage(pool, hours: int = 24) -> dict:
@@ -29,7 +29,7 @@ async def get_token_usage(pool, hours: int = 24) -> dict:
                 COALESCE(SUM(estimated_cost_usd), 0) as cost,
                 COUNT(*) as requests
             FROM cost_tracking
-            WHERE created_at >= NOW() - INTERVAL '%s hours'
+            WHERE created_at >= NOW() - make_interval(hours => $1)
             """,
             hours,
         )
@@ -49,7 +49,7 @@ async def get_ticket_stats(pool, hours: int = 24) -> dict:
             """
             SELECT status, COUNT(*) as count
             FROM tickets
-            WHERE created_at >= NOW() - INTERVAL '%s hours'
+            WHERE created_at >= NOW() - make_interval(hours => $1)
             GROUP BY status
             """,
             hours,
@@ -78,7 +78,7 @@ async def get_session_stats(pool, hours: int = 24) -> dict:
                 AVG(message_count) as avg_messages,
                 AVG(EXTRACT(EPOCH FROM (expires_at - started_at))) as avg_duration_seconds
             FROM sessions
-            WHERE started_at >= NOW() - INTERVAL '%s hours'
+            WHERE started_at >= NOW() - make_interval(hours => $1)
             """,
             hours,
         )
@@ -98,7 +98,7 @@ async def get_rate_limit_stats(pool, hours: int = 24) -> dict:
             SELECT COUNT(*) as hits
             FROM audit_log
             WHERE action = 'rate_limit_exceeded'
-            AND created_at >= NOW() - INTERVAL '%s hours'
+            AND created_at >= NOW() - make_interval(hours => $1)
             """,
             hours,
         )
@@ -113,11 +113,11 @@ async def get_top_issues(pool, hours: int = 168, limit: int = 10) -> list:
             SELECT details->>'category' as category, COUNT(*) as count
             FROM audit_log
             WHERE action = 'ticket_created'
-            AND created_at >= NOW() - INTERVAL '%s hours'
+            AND created_at >= NOW() - make_interval(hours => $1)
             AND details->>'category' IS NOT NULL
             GROUP BY category
             ORDER BY count DESC
-            LIMIT %s
+            LIMIT $2
             """,
             hours,
             limit,

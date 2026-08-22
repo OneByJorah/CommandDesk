@@ -127,7 +127,8 @@ async def health():
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     # Rate limit check
-    session_id = req.session_id or f"new-{req.user_id}-{int(time.time())}"
+    import uuid
+    session_id = req.session_id or uuid.uuid4().hex
     rate_check = rate_limiter.check_request(session_id, req.user_id, len(req.message))
 
     if not rate_check["allowed"]:
@@ -135,8 +136,7 @@ async def chat(req: ChatRequest):
 
     # Create session if new
     if not req.session_id:
-        await session_manager.create_session(req.user_id, req.platform)
-        session_id = req.user_id  # Use user_id as session key for simplicity
+        await session_manager.create_session(req.user_id, req.platform, session_id=session_id)
 
     # Call LLM
     try:

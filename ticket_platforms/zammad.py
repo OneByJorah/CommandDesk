@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import requests
+
 from .base import Ticket
 from .registry import register
 

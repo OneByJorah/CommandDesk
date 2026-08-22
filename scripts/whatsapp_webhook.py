@@ -26,7 +26,7 @@ logger = logging.getLogger("whatsapp-webhook")
 # ═══════════════════════════════════════════════════
 
 HELPDESK_AGENT_URL = os.getenv("HELPDESK_AGENT_URL", "http://helpdesk-agent:8080")
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:***@postgres:5432/helpdesk")
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 WHATSAPP_WEBHOOK_SECRET = os.getenv("WHATSAPP_WEBHOOK_SECRET", "change_me")
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "")
 WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
@@ -472,8 +472,8 @@ async def route_intent(intent: str, phone: str, text: str, session: dict) -> str
         if intent == "talk_to_human" or intent == "3":
             session["in_human_queue"] = True
             session["awaiting"] = None
-            await add_to_human_queue(phone, session)
             session["last_customer_message"] = text
+            await add_to_human_queue(phone, session)
             return RESPONSES["human_queue"]
 
     if intent == "email_provided":

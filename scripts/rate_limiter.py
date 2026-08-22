@@ -36,7 +36,7 @@ class RateLimiter:
     def __init__(self, config: RateLimitConfig, redis_client=None):
         self.config = config
         self.redis = redis_client
-        self._sessions: dict[str, SessionState] =()
+        self._sessions: dict[str, SessionState] = {}
 
     def check_request(self, session_id: str, user_id: str, message_length: int = 0) -> dict:
         """

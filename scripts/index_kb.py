@@ -81,15 +81,15 @@ def main():
             limit=1,
         )
         if existing.get("ids"):
-            # Check if content changed
-            for meta in existing.get("metadatas", []):
-                if meta and meta.get("hash") == content_hash:
-                    logger.info("  [skip] %s (unchanged)", file_path.name)
-                    break
-            else:
-                # Content changed, re-index
-                collection.delete(where={"source": source_str})
-            continue
+            unchanged = any(
+                meta and meta.get("hash") == content_hash
+                for meta in existing.get("metadatas", [])
+            )
+            if unchanged:
+                logger.info("  [skip] %s (unchanged)", file_path.name)
+                continue
+            # Content changed, re-index
+            collection.delete(where={"source": source_str})
 
         # Chunk and index
         chunks = chunk_text(content)

@@ -19,10 +19,10 @@ class SessionManager:
         self.pg_pool = postgres_pool
         self.max_duration = max_duration
 
-    async def create_session(self, user_id: str, platform: str = "web", ip: str = None) -> dict:
+    async def create_session(self, user_id: str, platform: str = "web", ip: str = None, session_id: str = None) -> dict:
         """Create a new session."""
         import uuid
-        session_id = str(uuid.uuid4())
+        session_id = session_id or str(uuid.uuid4())
         now = time.time()
         expires_at = now + self.max_duration
 
@@ -46,8 +46,8 @@ class SessionManager:
             async with self.pg_pool.acquire() as conn:
                 await conn.execute(
                     """INSERT INTO sessions (id, user_id, platform, message_count, started_at, expires_at, active, ip_address)
-                       VALUES ($1, $2, $3, $4, NOW(), NOW() + INTERVAL '{} seconds', TRUE, $5::inet)""".format(self.max_duration),
-                    session_id, user_id, platform, 0, ip,
+                       VALUES ($1, $2, $3, $4, NOW(), NOW() + make_interval(secs => $5), TRUE, $6::inet)""",
+                    session_id, user_id, platform, 0, self.max_duration, ip,
                 )
 
         return session_data

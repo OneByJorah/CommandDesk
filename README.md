@@ -5,7 +5,7 @@
 **Self-hosted AI-powered helpdesk agent** — local LLMs, multi-platform ticketing, workflow automation.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-Async-009688?logo=fastapi)]()
 [![llama.cpp](https://img.shields.io/badge/LLM-llama.cpp-FF6F00)]()
@@ -15,7 +15,7 @@
 <br>
 
 <a href="https://github.com/OneByJorah/CommandDesk">
-  <img src="docs/assets/screenshot.png" alt="CommandDesk preview" width="95%">
+  <img src="docs/screenshots/admin-dashboard.png" alt="CommandDesk admin dashboard" width="95%">
 </a>
 
 <br>
@@ -145,10 +145,10 @@ docker compose up -d          # One-command launch
 
 | Service | URL |
 |---------|-----|
-| **Dashboard** | http://localhost:8000 |
-| **Admin UI** | http://localhost:8000/admin |
-| **Widget Preview** | http://localhost:8000/widget |
+| **Dashboard** | http://localhost/dashboard/ (nginx reverse proxy) |
+| **Widget Preview** | http://localhost:8484 |
 | **Agent API** | http://localhost:8080 |
+| **WhatsApp Webhook** | http://localhost:9090 |
 
 ### Local Development
 
@@ -163,31 +163,40 @@ cd tools-ui && python3 -m http.server 3000
 
 ## Environment Variables
 
+Core variables (see [.env.example](.env.example) for the full list):
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8000` | Backend API port |
-| `DATABASE_URL` | `sqlite:///commanddesk.db` | Database connection string |
-| `OPENAI_API_KEY` | — | OpenAI API key (optional, use local LLM) |
-| `LLAMA_CPP_URL` | `http://llama-cpp:8080` | Local LLM endpoint |
-| `SMTP_HOST` | — | Email server for ticket ingestion |
-| `SMTP_PORT` | `587` | Email server port |
-| `CHROMA_DB_PATH` | `./chroma_db` | Vector database path |
-| `RATE_LIMIT_MAX` | `50` | Max messages per session |
-| `COST_PER_1K_TOKENS` | `0.02` | Cost per 1K tokens for tracking |
+| `LLM_API_BASE` | `http://llama:8081/v1` | LLM OpenAI-compatible endpoint |
+| `LLM_MODEL` | `qwen2.5-7b-instruct` | Model name sent to the LLM |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis for sessions & rate limiting |
+| `POSTGRES_URL` | `postgresql://helpdesk:helpdesk@postgres:5432/helpdesk` | PostgreSQL persistence |
+| `CHROMA_URL` | `http://chroma:8000` | ChromaDB vector store |
+| `SEARX_URL` | `http://searxng:8080` | SearXNG metasearch |
+| `RATE_LIMIT_PER_SESSION` | `50` | Max messages per session window |
+| `MAX_MESSAGE_LENGTH` | `4000` | Max message chars |
+| `IMAP_HOST` / `IMAP_USER` / `IMAP_PASSWORD` | — | Email-to-ticket ingestion |
+| `WHATSAPP_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` | — | WhatsApp Business API |
 
 ## API Endpoints
 
+**Helpdesk Agent** (port 8080):
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/tickets` | GET/POST | Manage tickets |
-| `/api/tickets/{id}` | GET/PUT | Get/update ticket |
-| `/api/tickets/{id}/respond` | POST | AI auto-response |
-| `/api/sessions` | GET | List active sessions |
-| `/api/agents` | GET | List helpdesk agents |
-| `/api/knowledge/search` | POST | Search knowledge base |
-| `/api/analytics/costs` | GET | Cost analytics |
-| `/api/analytics/performance` | GET | Agent performance |
-| `/api/health` | GET | System health check |
+| `/health` | GET | Agent health check |
+| `/chat` | POST | Send user message, get AI response |
+| `/session/{session_id}` | GET | Session usage info |
+
+**WhatsApp Webhook** (port 9090):
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/webhook/whatsapp` | GET | Webhook verification challenge |
+| `/webhook/whatsapp` | POST | Receive WhatsApp messages |
+| `/admin/takeover/{phone}` | POST | Human takes over a conversation |
+| `/admin/resume/{phone}` | POST | Re-enable the bot |
+| `/admin/queue` | GET | View human support queue |
 
 ## Ticket Statuses
 
