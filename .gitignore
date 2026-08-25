@@ -24,6 +24,10 @@ email-queue/
 .DS_Store
 Thumbs.db
 
+# Bytecode
+__pycache__/
+*.pyc
+
 # Logs
 *.log
 data/logs/

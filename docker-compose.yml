@@ -158,7 +158,7 @@ services:
   # SearXNG (Self-hosted Web Search)
   # ═══════════════════════════════════════════════════
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2025.1.1
     container_name: helpdesk-searxng
     ports:
       - "127.0.0.1:8888:8080"
@@ -185,7 +185,7 @@ services:
   # n8n (Workflow Automation)
   # ═══════════════════════════════════════════════════
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:1.80.0
     container_name: helpdesk-n8n
     ports:
       - "127.0.0.1:5678:5678"

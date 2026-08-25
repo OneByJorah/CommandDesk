@@ -1,0 +1,15 @@
+repo: CommandDesk
+class: AI, LLM, Agent, Docker, Python, Web, Security, Automation, Monitoring
+org: OneByJorah
+owner: Jhonattan L. Jimenez
+license: MIT
+production_score: 0
+last_audit: 2026-07-05T00:00:00Z
+last_publish: null
+standards_version: "2.1"
+dependencies: []
+deploy_target: production
+tailscale_only: false
+public_facing: false
+community_sla_hours: 48
+adoption_tracked: false

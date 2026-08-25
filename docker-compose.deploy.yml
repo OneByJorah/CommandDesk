@@ -1,0 +1,28 @@
+# CommandDesk - Complex deployment
+# Note: This requires LLM models which are too heavy for current deployment
+# Creating minimal deployment for core services only
+
+services:
+  n8n:
+    image: n8nio/n8n:1.80.0
+    container_name: commanddesk-n8n
+    ports:
+      - "8083:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:8083/
+      - GENERIC_TIMEZONE=UTC
+    networks:
+      - shared-infrastructure_default
+    restart: unless-stopped
+
+networks:
+  shared-infrastructure_default:
+    external: true
+
+volumes:
+  n8n-data:
