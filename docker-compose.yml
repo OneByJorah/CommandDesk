@@ -8,7 +8,7 @@ services:
     image: ghcr.io/ggerganov/llama.cpp:server
     container_name: helpdesk-llama
     ports:
-      - "127.0.0.1:8081:8081"
+      - "<ip-address>:8081:8081"
     volumes:
       - ./models:/models:ro
     environment:
@@ -17,7 +17,7 @@ services:
       - LLAMA_ARG_CTX_SIZE=65536
       - LLAMA_ARG_N_BATCH=512
       - LLAMA_ARG_THREADS=6
-      - LLAMA_ARG_HOST=0.0.0.0
+      - LLAMA_ARG_HOST=<ip-address>
       - LLAMA_ARG_N_GL=0
     deploy:
       resources:
@@ -25,7 +25,7 @@ services:
           memory: 7G
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8081/health"]
+      test: ["CMD", "curl", "-f", "http://<ip-address>:8081/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -42,7 +42,7 @@ services:
       dockerfile: Dockerfile
     container_name: helpdesk-agent
     ports:
-      - "127.0.0.1:8080:8080"
+      - "<ip-address>:8080:8080"
     volumes:
       - ./config:/app/config:ro
       - ./ticket_platforms:/app/ticket_platforms:ro
@@ -90,7 +90,7 @@ services:
       dockerfile: Dockerfile
     container_name: helpdesk-admin-agent
     ports:
-      - "127.0.0.1:8082:8082"
+      - "<ip-address>:8082:8082"
     volumes:
       - ./config:/app/config:ro
       - ./ticket_platforms:/app/ticket_platforms:ro
@@ -132,11 +132,11 @@ services:
     image: chromadb/chroma:0.5.23
     container_name: helpdesk-chroma
     ports:
-      - "127.0.0.1:8000:8000"
+      - "<ip-address>:8000:8000"
     volumes:
       - chroma-data:/chroma/chroma
     environment:
-      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HOST=<ip-address>
       - CHROMA_SERVER_PORT=8000
       - PERSIST_DIRECTORY=/chroma/chroma
       - ALLOW_RESET=true
@@ -147,7 +147,7 @@ services:
           memory: 2G
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8000/api/v1/heartbeat"]
+      test: ["CMD", "curl", "-sf", "http://<ip-address>:8000/api/v1/heartbeat"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -161,20 +161,20 @@ services:
     image: searxng/searxng:latest
     container_name: helpdesk-searxng
     ports:
-      - "127.0.0.1:8888:8080"
+      - "<ip-address>:8888:8080"
     volumes:
       - searxng-data:/etc/searxng
       - ./config/searxng-settings.yml:/etc/searxng/settings.yml:ro
     environment:
       - SEARXNG_BASE_URL=http://localhost:8888/
-      - SEARXNG_BIND_ADDRESS=0.0.0.0
+      - SEARXNG_BIND_ADDRESS=<ip-address>
     deploy:
       resources:
         limits:
           memory: 1G
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8888/search?q=test&format=json"]
+      test: ["CMD", "curl", "-sf", "http://<ip-address>:8888/search?q=test&format=json"]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -188,7 +188,7 @@ services:
     image: n8nio/n8n:latest
     container_name: helpdesk-n8n
     ports:
-      - "127.0.0.1:5678:5678"
+      - "<ip-address>:5678:5678"
     volumes:
       - n8n-data:/home/node/.n8n
       - ./workflows:/home/node/.n8n/workflows:ro
@@ -207,7 +207,7 @@ services:
           memory: 1G
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://127.0.0.1:5678/healthz"]
+      test: ["CMD", "curl", "-sf", "http://<ip-address>:5678/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -221,7 +221,7 @@ services:
     image: postgres:16-alpine
     container_name: helpdesk-postgres
     ports:
-      - "127.0.0.1:5432:5432"
+      - "<ip-address>:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -250,7 +250,7 @@ services:
     image: redis:7-alpine
     container_name: helpdesk-redis
     ports:
-      - "127.0.0.1:6379:6379"
+      - "<ip-address>:6379:6379"
     volumes:
       - redis-data:/data
     command: >
@@ -345,8 +345,8 @@ whatsapp-webhook:
     dockerfile: Dockerfile.whatsapp
   container_name: helpdesk-whatsapp
   ports:
-    - "127.0.0.1:9090:9090"
-    - "0.0.0.0:8383:8383"
+    - "<ip-address>:9090:9090"
+    - "<ip-address>:8383:8383"
   volumes:
     - ./config:/app/config:ro
     - ./scripts:/app/scripts:ro
@@ -404,7 +404,7 @@ tools-ui:
     dockerfile: Dockerfile
   container_name: helpdesk-tools-ui
   ports:
-    - "127.0.0.1:8484:8484"
+    - "<ip-address>:8484:8484"
   depends_on:
     - helpdesk-agent
     - admin-agent
@@ -424,7 +424,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: <ip-address>/16
 
 # ═══════════════════════════════════════════════════
 # Volumes
