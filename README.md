@@ -1,108 +1,72 @@
-<div align="center">
-
-![CommandDesk banner](docs/assets/banner.svg)
-
 # CommandDesk
 
-**Helpdesk agent** (port 8080):
+> Self-hosted AI helpdesk agent that ingests email, chat, WhatsApp, and tickets into one queue, answers from your knowledge base with a local LLM, and tracks the per-ticket AI cost in real time.
 
-[![GitHub release](https://img.shields.io/github/v/release/OneByJorah/CommandDesk?color=4ade80&label=release&logo=github)](https://github.com/OneByJorah/CommandDesk/releases)
-[![PyPI version](https://img.shields.io/pypi/v/commanddesk?color=4ade80&label=pip&logo=pypi)](https://pypi.org/project/commanddesk/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?color=FFB300&logo=open-source-initiative&logoColor=FFB300)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/github/license/OneByJorah/CommandDesk?style=for-the-badge&color=FFB300&labelColor=0a0a09)](https://github.com/OneByJorah/CommandDesk)
+[![Top Language](https://img.shields.io/github/languages/top/OneByJorah/CommandDesk?style=for-the-badge&color=FFB300&labelColor=0a0a09)](https://github.com/OneByJorah/CommandDesk)
+[![Stars](https://img.shields.io/github/stars/OneByJorah/CommandDesk?style=for-the-badge&color=FFB300&labelColor=0a0a09)](https://github.com/OneByJorah/CommandDesk/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/OneByJorah/CommandDesk?style=for-the-badge&color=FFB300&labelColor=0a0a09)](https://github.com/OneByJorah/CommandDesk/commits)
+[![CI](https://img.shields.io/github/actions/workflow/status/OneByJorah/CommandDesk/ci.yml?style=for-the-badge&color=FFB300&labelColor=0a0a09&label=ci)](https://github.com/OneByJorah/CommandDesk/actions/workflows/ci.yml)
 
-</div>
-
-![CommandDesk screenshot](docs/assets/screenshot.png)
+![CommandDesk admin dashboard](dashboard-realistic.png)
 
 ## What This Is
 
-Self-hosted help desk and IT ticketing system — multi-user, knowledge base, SLA tracking, and customer portal with Docker Compose deployment.
-
-Built for operators who want a self-hosted, Docker-deployed solution they control.
+Helpdesk AI is usually a paid SaaS add-on that ships your ticket data off-premises. CommandDesk runs the whole pipeline locally: it ingests email and chat into a unified queue, answers from your own knowledge base using a local llama.cpp model (or the OpenAI API), and tracks the AI cost of every ticket. Humans can take over any conversation at any point, and n8n workflows handle routing, escalation, and satisfaction surveys.
 
 ## Quick Start
 
-### pip
-
-```bash
-pip install commanddesk
-```
-
-### Docker (recommended)
-
 ```bash
 git clone https://github.com/OneByJorah/CommandDesk.git
 cd CommandDesk
+cp .env.example .env        # configure AI + email settings
 docker compose up -d
 ```
 
-### From Source
-
-```bash
-git clone https://github.com/OneByJorah/CommandDesk.git
-cd CommandDesk
-pip install -r requirements.txt
-python3 app.py
-```
-
-## Install
-
-### pip
-
-```bash
-pip install commanddesk
-```
-
-### Docker
-
-```bash
-git clone https://github.com/OneByJorah/CommandDesk.git
-cd CommandDesk
-docker compose up -d
-```
-
-### From Source
-
-```bash
-git clone https://github.com/OneByJorah/CommandDesk.git
-cd CommandDesk
-pip install -r requirements.txt
-python3 app.py
-```
+| Service | URL |
+|---|---|
+| Dashboard (nginx) | http://localhost/dashboard/ |
+| Widget preview | http://localhost:8484 |
+| Agent API | http://localhost:8080 |
+| WhatsApp webhook | http://localhost:9090 |
 
 ## Features
 
-- **Self-hosted** — no cloud dependencies, run on your own hardware
-- **Docker Compose** — full stack deployment with one command
-- **pip package** — install via PyPI
-- **Dark theme** — operational, clean UI
+- Multi-platform queue: email, web widget, WhatsApp, osTicket, Freshdesk, and Zammad.
+- AI responses via local llama.cpp or OpenAI GPT with context-aware replies.
+- ChromaDB vector-search knowledge base over your own documentation.
+- IMAP email-to-ticket ingestion.
+- SLA definitions with automatic escalation on breach.
+- Real-time AI cost tracking per ticket, per agent, per session.
+- Per-session rate limiting with audit logging.
+- n8n workflow automation for routing, escalation, surveys, and daily digests.
+- Admin dashboard with live queue, metrics, audit log, and service health.
 
-- **Help desk ticketing** — submit, track, and resolve tickets
-- **Multi-user support** — agents, admins, customers
-- **Knowledge base** — searchable articles and FAQs
-- **SLA tracking** — response time monitoring
-- **Customer portal** — self-service ticket submission
-- **Docker Compose deployment** — full stack with one command
-- **Dark theme dashboard** — operational, clean UI
+## Architecture
 
-## Tech Stack
+```
+          User (WhatsApp / Web Widget / Email / API / Portal)
+                              │
+                    Helpdesk Agent (FastAPI :8080)
+                    Session Mgmt · Rate Limiting · Routing
+                     │          │               │
+              ┌──────┴───┐  ┌───┴──────┐  ┌─────┴────────────┐
+              │ LLM Core │  │ Context  │  │ Ticket Platforms │
+              │llama.cpp │  │ChromaDB  │  │osTicket·Freshdesk│
+              │ / OpenAI │  │· SearXNG │  │· Zammad · Email  │
+              └──────────┘  └──────────┘  └──────────────────┘
+                     │                            │
+              Admin Dashboard              n8n Workflows
+              PostgreSQL·Redis             Escalation·Surveys
+```
 
-- **Backend** — Python 3.11+, pydantic, pyyaml
-- **Deployment** — Docker Compose, pip install
-- **Configuration** — environment variables, config files
+## Stack
 
-## Package Badges
-
-[![GitHub release](https://img.shields.io/github/v/release/OneByJorah/CommandDesk?color=4ade80&label=release&logo=github)](https://github.com/OneByJorah/CommandDesk/releases)
-[![PyPI version](https://img.shields.io/pypi/v/commanddesk?color=4ade80&label=pip&logo=pypi)](https://pypi.org/project/commanddesk/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?color=FFB300&logo=open-source-initiative&logoColor=FFB300)](https://opensource.org/licenses/MIT)
+Python 3.10+ · FastAPI · llama.cpp / OpenAI · ChromaDB · PostgreSQL · Redis · SearXNG · n8n · Docker Compose · HTML/CSS.
 
 ## Contributing
 
-Contributions are welcome. [Open an issue](https://github.com/OneByJorah/CommandDesk/issues) to report a bug or request a feature.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). [Open an issue](https://github.com/OneByJorah/CommandDesk/issues).
 
 ## License
 
