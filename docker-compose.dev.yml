@@ -21,7 +21,7 @@ services:
 
   llama:
     ports:
-      - "0.0.0.0:8081:8081"  # Expose for development
+      - "127.0.0.1:8081:8081"  # Expose for development
 
   whatsapp-webhook:
     build:
@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile.whatsapp
     ports:
       - "127.0.0.1:9090:9090"
-      - "0.0.0.0:8383:8383"  # WhatsApp HTTPS
+      - "127.0.0.1:8383:8383"  # WhatsApp HTTPS
 
   health-monitor:
     build:
